@@ -95,7 +95,8 @@ export async function action({ request }: ActionFunctionArgs) {
         queryString = `${searchField}:'${escapedValue}'`;
         break;
       case 'contains':
-        queryString = escapedValue;
+        // For contains, we use a simple search with the field name
+        queryString = `${searchField}:*${escapedValue}*`;
         break;
       case 'doesNotContain':
         queryString = `-${searchField}:*${escapedValue}*`;
@@ -141,13 +142,21 @@ export async function action({ request }: ActionFunctionArgs) {
       // Filter the products based on condition
       const filteredProducts = {
         edges: allProducts.filter(({ node }: { node: Product }) => {
-          const title = node.title.toLowerCase();
+          const fieldValue = field === 'description' 
+            ? (node.description || '').toLowerCase() 
+            : node.title.toLowerCase();
           
           switch (condition) {
+            case 'is':
+              return fieldValue === searchValue;
+            case 'contains':
+              return fieldValue.includes(searchValue);
+            case 'doesNotContain':
+              return !fieldValue.includes(searchValue);
             case 'startsWith':
-              return title.startsWith(searchValue);
+              return fieldValue.startsWith(searchValue);
             case 'endsWith':
-              return title.endsWith(searchValue);
+              return fieldValue.endsWith(searchValue);
             default:
               return true;
           }
