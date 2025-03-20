@@ -228,19 +228,34 @@ export default function Index() {
 
   const fieldOptions = [
     { label: 'Title', value: 'title' },
-    { label: 'Collection', value: 'collection' },
-    { label: 'Product ID', value: 'productId' },
     { label: 'Description', value: 'description' },
-    { label: 'Price', value: 'price' },
   ];
 
-  const conditionOptions = [
+  // Base condition options for non-description fields
+  const baseConditionOptions = [
     { label: 'is', value: 'is' },
     { label: 'contains', value: 'contains' },
     { label: 'does not contain', value: 'doesNotContain' },
     { label: 'starts with', value: 'startsWith' },
     { label: 'ends with', value: 'endsWith' },
   ];
+
+  // Condition options for description field (without 'is')
+  const descriptionConditionOptions = [
+    { label: 'contains', value: 'contains' },
+    { label: 'does not contain', value: 'doesNotContain' },
+    { label: 'starts with', value: 'startsWith' },
+    { label: 'ends with', value: 'endsWith' },
+  ];
+
+  // Handle field change
+  const handleFieldChange = (value: string) => {
+    setSelectedField(value);
+    // If switching to description and current condition is 'is', change to 'contains'
+    if (value === 'description' && selectedCondition === 'is') {
+      setSelectedCondition('contains');
+    }
+  };
 
   const handlePreview = () => {
     console.log('Preview clicked with values:', {
@@ -269,7 +284,7 @@ export default function Index() {
     <Page>
       <BlockStack gap="500">
         <Text variant="headingSm" as="h1">STEP 1: SELECT WHAT PRODUCTS TO EDIT</Text>
-        <Text variant="headingSm" as="h3">Products must match all following conditions:</Text>
+        <Text variant="headingSm" as="h3">Products must match the following condition:</Text>
         
         <Card>
           <BlockStack gap="400">
@@ -278,11 +293,11 @@ export default function Index() {
                 label=""
                 options={fieldOptions}
                 value={selectedField}
-                onChange={setSelectedField}
+                onChange={handleFieldChange}
               />
               <Select
                 label=""
-                options={conditionOptions}
+                options={selectedField === 'description' ? descriptionConditionOptions : baseConditionOptions}
                 value={selectedCondition}
                 onChange={setSelectedCondition}
               />
