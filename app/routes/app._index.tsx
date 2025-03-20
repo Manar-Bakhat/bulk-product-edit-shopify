@@ -70,6 +70,52 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export async function action({ request }: ActionFunctionArgs) {
   const { admin } = await authenticate.admin(request);
   const formData = await request.formData();
+  const actionType = formData.get("actionType") as string;
+
+  if (actionType === "bulkEdit") {
+    const productIds = formData.get("productIds") as string;
+    const textToAdd = formData.get("textToAdd") as string;
+    const productIdsArray = JSON.parse(productIds);
+    const productTitles = JSON.parse(formData.get("productTitles") as string);
+
+    try {
+      // Update each product's title
+      for (const productId of productIdsArray) {
+        const mutation = `#graphql
+          mutation productUpdate($input: ProductInput!) {
+            productUpdate(input: $input) {
+              product {
+                id
+                title
+              }
+              userErrors {
+                field
+                message
+              }
+            }
+          }
+        `;
+
+        const variables = {
+          input: {
+            id: `gid://shopify/Product/${productId}`,
+            title: `${textToAdd} ${productTitles[productId] || ''}`
+          }
+        };
+
+        await admin.graphql(mutation, {
+          variables: variables
+        });
+      }
+
+      return json({ success: true });
+    } catch (error) {
+      console.error('Error updating products:', error);
+      return json({ error: 'Failed to update products' });
+    }
+  }
+
+  // Existing filter logic
   const field = formData.get("field") as string;
   const condition = formData.get("condition") as string;
   const value = formData.get("value") as string;
@@ -187,12 +233,15 @@ export default function Index() {
   const [filterValue, setFilterValue] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [selectedEditOption, setSelectedEditOption] = useState('');
+  const [textToAdd, setTextToAdd] = useState('');
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
 
-  // Load initial products
+  // Load initial products only if no search has been performed
   useEffect(() => {
-    if (loaderData?.initialProducts?.edges) {
+    if (!hasSearched && loaderData?.initialProducts?.edges) {
       console.log('Setting initial products:', loaderData.initialProducts);
       const initialProducts = loaderData.initialProducts.edges.map(({ node }) => ({
         id: node.id.replace('gid://shopify/Product/', ''),
@@ -204,7 +253,7 @@ export default function Index() {
       }));
       setProducts(initialProducts);
     }
-  }, [loaderData]);
+  }, [loaderData, hasSearched]);
 
   // Handle filtered products
   useEffect(() => {
@@ -221,6 +270,7 @@ export default function Index() {
         }));
         console.log('Setting filtered products:', filteredProducts);
         setProducts(filteredProducts);
+        setHasSearched(true);  // Set hasSearched to true when filtered products are set
       }
       setIsLoading(false);
     }
@@ -264,10 +314,39 @@ export default function Index() {
       value: filterValue
     });
     setIsLoading(true);
+    setHasSearched(true);
     const formData = new FormData();
     formData.append("field", selectedField);
     formData.append("condition", selectedCondition);
     formData.append("value", filterValue);
+    submit(formData, { method: "post" });
+  };
+
+  const editOptions = [
+    { label: 'Select an option', value: '' },
+    { label: 'Add text at the beginning of title', value: 'addTextBeginning' }
+  ];
+
+  const handleEditOptionChange = (value: string) => {
+    setSelectedEditOption(value);
+  };
+
+  const handleBulkEdit = () => {
+    if (!textToAdd.trim()) {
+      return;
+    }
+
+    const productIds = products.map(product => product.id);
+    const productTitles = products.reduce((acc, product) => {
+      acc[product.id] = product.title;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const formData = new FormData();
+    formData.append("actionType", "bulkEdit");
+    formData.append("productIds", JSON.stringify(productIds));
+    formData.append("productTitles", JSON.stringify(productTitles));
+    formData.append("textToAdd", textToAdd);
     submit(formData, { method: "post" });
   };
 
@@ -318,34 +397,68 @@ export default function Index() {
               </Button>
             </InlineStack>
 
-            <div style={{ position: 'relative' }}>
-              {isLoading && (
-                <div style={{ 
-                  position: 'absolute', 
-                  top: 0, 
-                  left: 0, 
-                  right: 0, 
-                  bottom: 0, 
-                  background: 'rgba(255, 255, 255, 0.8)', 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  alignItems: 'center', 
-                  zIndex: 1 
-                }}>
-                  <Spinner size="large" />
+            {hasSearched && (
+              <div style={{ position: 'relative' }}>
+                {isLoading && (
+                  <div style={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: 0, 
+                    right: 0, 
+                    bottom: 0, 
+                    background: 'rgba(255, 255, 255, 0.8)', 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    zIndex: 1 
+                  }}>
+                    <Spinner size="large" />
+                  </div>
+                )}
+                
+                {products.length > 0 ? (
+                  <DataTable
+                    columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                    headings={['ID', 'Title', 'Description', 'Product Type', 'Vendor', 'Status']}
+                    rows={rows}
+                  />
+                ) : !isLoading && (
+                  <Text variant="bodyMd" as="p">No products found</Text>
+                )}
+              </div>
+            )}
+          </BlockStack>
+        </Card>
+
+        <Text variant="headingSm" as="h1">STEP 2: CHOOSE HOW TO EDIT MATCHING PRODUCTS/VARIANTS</Text>
+        <Card>
+          <BlockStack gap="400">
+            <Text variant="headingSm" as="h2">Choose an option</Text>
+            <Select
+              label=""
+              options={editOptions}
+              value={selectedEditOption}
+              onChange={handleEditOptionChange}
+              placeholder="Select an option"
+            />
+            
+            {selectedEditOption === 'addTextBeginning' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Add</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    value={textToAdd}
+                    onChange={setTextToAdd}
+                    placeholder="Enter text to add at the beginning of titles"
+                    autoComplete="off"
+                  />
                 </div>
-              )}
-              
-              {products.length > 0 ? (
-                <DataTable
-                  columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
-                  headings={['ID', 'Title', 'Description', 'Product Type', 'Vendor', 'Status']}
-                  rows={rows}
-                />
-              ) : !isLoading && (
-                <Text variant="bodyMd" as="p">No products found</Text>
-              )}
-            </div>
+                <Button variant="primary" onClick={handleBulkEdit}>
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
           </BlockStack>
         </Card>
       </BlockStack>
