@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a7db49394bfec100b10f31a12f89f98d"
-application_url = "https://var-rc-oxygen-writing.trycloudflare.com"
+application_url = "https://shops-superb-nhs-candy.trycloudflare.com"
 embedded = true
 name = "bulk-product-edit"
 handle = "bulk-product-edit-6"
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://var-rc-oxygen-writing.trycloudflare.com/auth/callback",
-  "https://var-rc-oxygen-writing.trycloudflare.com/auth/shopify/callback",
-  "https://var-rc-oxygen-writing.trycloudflare.com/api/auth/callback"
+  "https://shops-superb-nhs-candy.trycloudflare.com/auth/callback",
+  "https://shops-superb-nhs-candy.trycloudflare.com/auth/shopify/callback",
+  "https://shops-superb-nhs-candy.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
