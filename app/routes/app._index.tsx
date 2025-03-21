@@ -75,6 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (actionType === "bulkEdit") {
     const productIds = formData.get("productIds") as string;
     const textToAdd = formData.get("textToAdd") as string;
+    const editType = formData.get("editType") as string;
     const productIdsArray = JSON.parse(productIds);
     const productTitles = JSON.parse(formData.get("productTitles") as string);
 
@@ -96,10 +97,25 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         `;
 
+        const currentTitle = productTitles[productId] || '';
+        let newTitle = currentTitle;
+
+        switch (editType) {
+          case 'addTextBeginning':
+            newTitle = `${textToAdd} ${currentTitle}`;
+            break;
+          case 'addTextEnd':
+            newTitle = `${currentTitle} ${textToAdd}`;
+            break;
+          case 'removeText':
+            newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), '').trim();
+            break;
+        }
+
         const variables = {
           input: {
             id: `gid://shopify/Product/${productId}`,
-            title: `${textToAdd} ${productTitles[productId] || ''}`
+            title: newTitle
           }
         };
 
@@ -323,8 +339,9 @@ export default function Index() {
   };
 
   const editOptions = [
-    { label: 'Select an option', value: '' },
-    { label: 'Add text at the beginning of title', value: 'addTextBeginning' }
+    { label: 'Add text at the beginning of title', value: 'addTextBeginning' },
+    { label: 'Add text to the end of title', value: 'addTextEnd' },
+    { label: 'Find and remove text from title', value: 'removeText' }
   ];
 
   const handleEditOptionChange = (value: string) => {
@@ -347,6 +364,7 @@ export default function Index() {
     formData.append("productIds", JSON.stringify(productIds));
     formData.append("productTitles", JSON.stringify(productTitles));
     formData.append("textToAdd", textToAdd);
+    formData.append("editType", selectedEditOption);
     submit(formData, { method: "post" });
   };
 
@@ -365,7 +383,7 @@ export default function Index() {
         <Text variant="headingSm" as="h1">STEP 1: SELECT WHAT PRODUCTS TO EDIT</Text>
         <Text variant="headingSm" as="h3">Products must match the following condition:</Text>
         
-        <Card>
+            <Card>
           <BlockStack gap="400">
             <InlineStack gap="300" align="start" blockAlign="center">
               <Select
@@ -391,10 +409,10 @@ export default function Index() {
               </div>
             </InlineStack>
 
-            <InlineStack gap="300">
+                <InlineStack gap="300">
               <Button variant="primary" onClick={handlePreview} loading={isLoading}>
                 Preview matching products
-              </Button>
+                  </Button>
             </InlineStack>
 
             {hasSearched && (
@@ -426,12 +444,12 @@ export default function Index() {
                   <Text variant="bodyMd" as="p">No products found</Text>
                 )}
               </div>
-            )}
-          </BlockStack>
-        </Card>
+                )}
+              </BlockStack>
+            </Card>
 
         <Text variant="headingSm" as="h1">STEP 2: CHOOSE HOW TO EDIT MATCHING PRODUCTS/VARIANTS</Text>
-        <Card>
+              <Card>
           <BlockStack gap="400">
             <Text variant="headingSm" as="h2">Choose an option</Text>
             <Select
@@ -442,15 +460,21 @@ export default function Index() {
               placeholder="Select an option"
             />
             
-            {selectedEditOption === 'addTextBeginning' && (
+            {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText') && (
               <BlockStack gap="400">
-                <Text variant="headingSm" as="h3">Add</Text>
+                <Text variant="headingSm" as="h3">
+                  {selectedEditOption === 'removeText' ? 'Remove' : 'Add'}
+                </Text>
                 <div style={{ maxWidth: '400px' }}>
                   <TextField
                     label=""
                     value={textToAdd}
                     onChange={setTextToAdd}
-                    placeholder="Enter text to add at the beginning of titles"
+                    placeholder={
+                      selectedEditOption === 'removeText'
+                        ? 'Enter text to remove from titles'
+                        : `Enter text to add ${selectedEditOption === 'addTextBeginning' ? 'at the beginning' : 'to the end'} of titles`
+                    }
                     autoComplete="off"
                   />
                 </div>
@@ -459,8 +483,8 @@ export default function Index() {
                 </Button>
               </BlockStack>
             )}
-          </BlockStack>
-        </Card>
+                </BlockStack>
+              </Card>
       </BlockStack>
     </Page>
   );
