@@ -77,6 +77,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const textToAdd = formData.get("textToAdd") as string;
     const editType = formData.get("editType") as string;
     const replacementText = formData.get("replacementText") as string;
+    const capitalizationType = formData.get("capitalizationType") as string;
+    const numberOfCharacters = parseInt(formData.get("numberOfCharacters") as string);
     const productIdsArray = JSON.parse(productIds);
     const productTitles = JSON.parse(formData.get("productTitles") as string);
 
@@ -113,6 +115,31 @@ export async function action({ request }: ActionFunctionArgs) {
             break;
           case 'replaceText':
             newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), replacementText);
+            break;
+          case 'capitalize':
+            switch (capitalizationType) {
+              case 'titleCase':
+                newTitle = currentTitle
+                  .toLowerCase()
+                  .split(' ')
+                  .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+                break;
+              case 'uppercase':
+                newTitle = currentTitle.toUpperCase();
+                break;
+              case 'lowercase':
+                newTitle = currentTitle.toLowerCase();
+                break;
+              case 'firstLetter':
+                newTitle = currentTitle.charAt(0).toUpperCase() + currentTitle.slice(1).toLowerCase();
+                break;
+            }
+            break;
+          case 'truncate':
+            if (numberOfCharacters > 0) {
+              newTitle = currentTitle.slice(0, numberOfCharacters);
+            }
             break;
         }
 
@@ -258,6 +285,8 @@ export default function Index() {
   const [textToAdd, setTextToAdd] = useState('');
   const [textToReplace, setTextToReplace] = useState('');
   const [replacementText, setReplacementText] = useState('');
+  const [capitalizationType, setCapitalizationType] = useState('titleCase');
+  const [numberOfCharacters, setNumberOfCharacters] = useState('');
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
 
@@ -348,7 +377,9 @@ export default function Index() {
     { label: 'Add text at the beginning of title', value: 'addTextBeginning' },
     { label: 'Add text to the end of title', value: 'addTextEnd' },
     { label: 'Find and remove text from title', value: 'removeText' },
-    { label: 'Find and replace text in title', value: 'replaceText' }
+    { label: 'Find and replace text in title', value: 'replaceText' },
+    { label: 'Change title capitalization', value: 'capitalize' },
+    { label: 'Keep the first X number of characters', value: 'truncate' }
   ];
 
   const handleEditOptionChange = (value: string) => {
@@ -358,6 +389,13 @@ export default function Index() {
   const handleBulkEdit = () => {
     if (selectedEditOption === 'replaceText') {
       if (!textToReplace.trim() || !replacementText.trim()) {
+        return;
+      }
+    } else if (selectedEditOption === 'capitalize') {
+      // No validation needed for capitalization
+    } else if (selectedEditOption === 'truncate') {
+      const num = parseInt(numberOfCharacters);
+      if (isNaN(num) || num <= 0) {
         return;
       }
     } else if (!textToAdd.trim()) {
@@ -377,6 +415,8 @@ export default function Index() {
     formData.append("textToAdd", selectedEditOption === 'replaceText' ? textToReplace : textToAdd);
     formData.append("replacementText", replacementText);
     formData.append("editType", selectedEditOption);
+    formData.append("capitalizationType", capitalizationType);
+    formData.append("numberOfCharacters", numberOfCharacters);
     submit(formData, { method: "post" });
   };
 
@@ -472,10 +512,13 @@ export default function Index() {
               placeholder="Select an option"
             />
             
-            {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText' || selectedEditOption === 'replaceText') && (
+            {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText' || selectedEditOption === 'replaceText' || selectedEditOption === 'capitalize' || selectedEditOption === 'truncate') && (
               <BlockStack gap="400">
                 <Text variant="headingSm" as="h3">
-                  {selectedEditOption === 'removeText' ? 'Remove' : selectedEditOption === 'replaceText' ? 'Replace' : 'Add'}
+                  {selectedEditOption === 'removeText' ? 'Remove' : 
+                   selectedEditOption === 'replaceText' ? 'Replace' : 
+                   selectedEditOption === 'capitalize' ? 'Capitalize' : 
+                   selectedEditOption === 'truncate' ? 'Truncate' : 'Add'}
                 </Text>
                 <div style={{ maxWidth: '400px' }}>
                   {selectedEditOption === 'replaceText' ? (
@@ -492,6 +535,31 @@ export default function Index() {
                         value={replacementText}
                         onChange={setReplacementText}
                         placeholder="Enter replacement text"
+                        autoComplete="off"
+                      />
+                    </BlockStack>
+                  ) : selectedEditOption === 'capitalize' ? (
+                    <BlockStack gap="400">
+                      <Select
+                        label="Capitalization type"
+                        options={[
+                          { label: 'First Letter Of Each Word Is Uppercase', value: 'titleCase' },
+                          { label: 'UPPERCASE', value: 'uppercase' },
+                          { label: 'lowercase', value: 'lowercase' },
+                          { label: 'First letter of title uppercase', value: 'firstLetter' }
+                        ]}
+                        value={capitalizationType}
+                        onChange={setCapitalizationType}
+                      />
+                    </BlockStack>
+                  ) : selectedEditOption === 'truncate' ? (
+                    <BlockStack gap="400">
+                      <TextField
+                        label="Number of characters"
+                        type="number"
+                        value={numberOfCharacters}
+                        onChange={setNumberOfCharacters}
+                        placeholder="Enter number of characters to keep"
                         autoComplete="off"
                       />
                     </BlockStack>
