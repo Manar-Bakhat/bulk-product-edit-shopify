@@ -328,6 +328,8 @@ export default function Index() {
   const [numberOfCharacters, setNumberOfCharacters] = useState('');
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   // Load initial products only if no search has been performed
   useEffect(() => {
@@ -369,6 +371,69 @@ export default function Index() {
       setIsLoading(false);
     }
   }, [actionData]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = products.slice(startIndex, endIndex);
+
+  const rows = currentProducts.map((product) => [
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <img 
+        src={product.featuredImage?.url || 'https://cdn.shopify.com/s/files/1/0757/9956/5321/files/placeholder.png'} 
+        alt={product.featuredImage?.altText || 'Product image'} 
+        style={{ 
+          width: '60px', 
+          height: '60px', 
+          objectFit: 'cover',
+          borderRadius: '4px'
+        }}
+        onError={(e) => {
+          e.currentTarget.src = 'https://cdn.shopify.com/s/files/1/0757/9956/5321/files/placeholder.png';
+        }}
+      />
+      <div>
+        <Text variant="bodyMd" as="p" fontWeight="bold">{product.title}</Text>
+        <Text variant="bodySm" as="p" tone="subdued">{product.vendor}</Text>
+      </div>
+    </div>,
+    <div style={{ 
+      maxWidth: '200px',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      position: 'relative'
+    }}>
+      <Text variant="bodySm" as="p" tone="subdued">
+        {product.description ? (
+          <div style={{ 
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {product.description}
+          </div>
+        ) : 'No description'}
+      </Text>
+    </div>,
+    <div>
+      <Text variant="bodySm" as="p">{product.productType || 'N/A'}</Text>
+    </div>,
+    <div>
+      <Badge tone={product.status === 'ACTIVE' ? 'success' : 'warning'}>
+        {product.status}
+      </Badge>
+    </div>,
+    <div style={{ textAlign: 'right' }}>
+      <Text variant="bodyMd" as="p" fontWeight="bold">
+        {new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: product.priceRangeV2.minVariantPrice.currencyCode
+        }).format(parseFloat(product.priceRangeV2.minVariantPrice.amount))}
+      </Text>
+    </div>
+  ]);
 
   const fieldOptions = [
     { label: 'Title', value: 'title' },
@@ -464,15 +529,6 @@ export default function Index() {
     submit(formData, { method: "post" });
   };
 
-  const rows = products.map((product) => [
-    product.id,
-    product.title,
-    product.description,
-    product.productType,
-    product.vendor,
-    product.status
-  ]);
-
   return (
     <Page>
       <BlockStack gap="500">
@@ -549,11 +605,25 @@ export default function Index() {
                   )}
                   
                   {products.length > 0 ? (
-                    <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
-                      headings={['ID', 'Title', 'Description', 'Product Type', 'Vendor', 'Status']}
-                      rows={rows}
-                    />
+                    <BlockStack gap="400">
+                      <DataTable
+                        columnContentTypes={['text', 'text', 'text', 'text', 'text']}
+                        headings={['Product', 'Description', 'Product Type', 'Status', 'Price']}
+                        rows={rows}
+                        hoverable
+                        defaultSortDirection="descending"
+                        initialSortColumnIndex={0}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                        <Pagination
+                          label={`Page ${currentPage} of ${totalPages}`}
+                          hasPrevious={currentPage > 1}
+                          onPrevious={() => setCurrentPage(currentPage - 1)}
+                          hasNext={currentPage < totalPages}
+                          onNext={() => setCurrentPage(currentPage + 1)}
+                        />
+                      </div>
+                    </BlockStack>
                   ) : !isLoading && (
                     <Banner tone="success">
                       No products found matching your criteria
