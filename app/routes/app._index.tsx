@@ -250,6 +250,8 @@ export async function action({ request }: ActionFunctionArgs) {
               return fieldValue.startsWith(searchValue);
             case 'endsWith':
               return fieldValue.endsWith(searchValue);
+            case 'empty':
+              return !node.description || node.description.trim() === '';
             default:
               return true;
           }
@@ -347,6 +349,7 @@ export default function Index() {
     { label: 'does not contain', value: 'doesNotContain' },
     { label: 'starts with', value: 'startsWith' },
     { label: 'ends with', value: 'endsWith' },
+    { label: 'empty', value: 'empty' }
   ];
 
   // Handle field change
@@ -450,15 +453,17 @@ export default function Index() {
                 value={selectedCondition}
                 onChange={setSelectedCondition}
               />
-              <div style={{ minWidth: '200px' }}>
-                <TextField
-                  label=""
-                  value={filterValue}
-                  onChange={setFilterValue}
-                  autoComplete="off"
-                  placeholder="Enter search text..."
-                />
-              </div>
+              {selectedCondition !== 'empty' && (
+                <div style={{ minWidth: '200px' }}>
+                  <TextField
+                    label=""
+                    value={filterValue}
+                    onChange={setFilterValue}
+                    autoComplete="off"
+                    placeholder="Enter search text..."
+                  />
+                </div>
+              )}
             </InlineStack>
 
                 <InlineStack gap="300">
