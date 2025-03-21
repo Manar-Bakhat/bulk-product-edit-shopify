@@ -76,6 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const productIds = formData.get("productIds") as string;
     const textToAdd = formData.get("textToAdd") as string;
     const editType = formData.get("editType") as string;
+    const replacementText = formData.get("replacementText") as string;
     const productIdsArray = JSON.parse(productIds);
     const productTitles = JSON.parse(formData.get("productTitles") as string);
 
@@ -109,6 +110,9 @@ export async function action({ request }: ActionFunctionArgs) {
             break;
           case 'removeText':
             newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), '').trim();
+            break;
+          case 'replaceText':
+            newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), replacementText);
             break;
         }
 
@@ -252,6 +256,8 @@ export default function Index() {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedEditOption, setSelectedEditOption] = useState('');
   const [textToAdd, setTextToAdd] = useState('');
+  const [textToReplace, setTextToReplace] = useState('');
+  const [replacementText, setReplacementText] = useState('');
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
 
@@ -341,7 +347,8 @@ export default function Index() {
   const editOptions = [
     { label: 'Add text at the beginning of title', value: 'addTextBeginning' },
     { label: 'Add text to the end of title', value: 'addTextEnd' },
-    { label: 'Find and remove text from title', value: 'removeText' }
+    { label: 'Find and remove text from title', value: 'removeText' },
+    { label: 'Find and replace text in title', value: 'replaceText' }
   ];
 
   const handleEditOptionChange = (value: string) => {
@@ -349,7 +356,11 @@ export default function Index() {
   };
 
   const handleBulkEdit = () => {
-    if (!textToAdd.trim()) {
+    if (selectedEditOption === 'replaceText') {
+      if (!textToReplace.trim() || !replacementText.trim()) {
+        return;
+      }
+    } else if (!textToAdd.trim()) {
       return;
     }
 
@@ -363,7 +374,8 @@ export default function Index() {
     formData.append("actionType", "bulkEdit");
     formData.append("productIds", JSON.stringify(productIds));
     formData.append("productTitles", JSON.stringify(productTitles));
-    formData.append("textToAdd", textToAdd);
+    formData.append("textToAdd", selectedEditOption === 'replaceText' ? textToReplace : textToAdd);
+    formData.append("replacementText", replacementText);
     formData.append("editType", selectedEditOption);
     submit(formData, { method: "post" });
   };
@@ -460,23 +472,42 @@ export default function Index() {
               placeholder="Select an option"
             />
             
-            {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText') && (
+            {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText' || selectedEditOption === 'replaceText') && (
               <BlockStack gap="400">
                 <Text variant="headingSm" as="h3">
-                  {selectedEditOption === 'removeText' ? 'Remove' : 'Add'}
+                  {selectedEditOption === 'removeText' ? 'Remove' : selectedEditOption === 'replaceText' ? 'Replace' : 'Add'}
                 </Text>
                 <div style={{ maxWidth: '400px' }}>
-                  <TextField
-                    label=""
-                    value={textToAdd}
-                    onChange={setTextToAdd}
-                    placeholder={
-                      selectedEditOption === 'removeText'
-                        ? 'Enter text to remove from titles'
-                        : `Enter text to add ${selectedEditOption === 'addTextBeginning' ? 'at the beginning' : 'to the end'} of titles`
-                    }
-                    autoComplete="off"
-                  />
+                  {selectedEditOption === 'replaceText' ? (
+                    <BlockStack gap="400">
+                      <TextField
+                        label="Find"
+                        value={textToReplace}
+                        onChange={setTextToReplace}
+                        placeholder="Enter text to find"
+                        autoComplete="off"
+                      />
+                      <TextField
+                        label="Replace with"
+                        value={replacementText}
+                        onChange={setReplacementText}
+                        placeholder="Enter replacement text"
+                        autoComplete="off"
+                      />
+                    </BlockStack>
+                  ) : (
+                    <TextField
+                      label=""
+                      value={textToAdd}
+                      onChange={setTextToAdd}
+                      placeholder={
+                        selectedEditOption === 'removeText'
+                          ? 'Enter text to remove from titles'
+                          : `Enter text to add ${selectedEditOption === 'addTextBeginning' ? 'at the beginning' : 'to the end'} of titles`
+                      }
+                      autoComplete="off"
+                    />
+                  )}
                 </div>
                 <Button variant="primary" onClick={handleBulkEdit}>
                   Start bulk edit now
