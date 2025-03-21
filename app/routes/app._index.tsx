@@ -15,7 +15,9 @@ import {
   Divider,
   Banner,
   Icon,
-  Pagination
+  Pagination,
+  Toast,
+  Frame
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { useState, useEffect } from "react";
@@ -51,6 +53,7 @@ interface ActionData {
     };
   };
   error?: string;
+  success?: boolean;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -330,6 +333,8 @@ export default function Index() {
   const actionData = useActionData<ActionData>();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Load initial products only if no search has been performed
   useEffect(() => {
@@ -529,214 +534,238 @@ export default function Index() {
     submit(formData, { method: "post" });
   };
 
+  // Add effect to handle success toast
+  useEffect(() => {
+    if (actionData?.success) {
+      setToastMessage('Products updated successfully!');
+      setShowSuccessToast(true);
+      // Reset form fields
+      setSelectedEditOption('');
+      setTextToAdd('');
+      setTextToReplace('');
+      setReplacementText('');
+      setCapitalizationType('titleCase');
+      setNumberOfCharacters('');
+    }
+  }, [actionData]);
+
   return (
-    <Page>
-      <BlockStack gap="500">
-        {/* Progress Indicator */}
-        <BlockStack gap="200">
-          <InlineStack align="space-between" blockAlign="center">
-            <Badge tone="success">Step 1 of 2</Badge>
-            <ProgressBar progress={50} tone="success" />
-          </InlineStack>
-        </BlockStack>
-
-        {/* Filter Section */}
-        <Card>
-          <BlockStack gap="400">
+    <Frame>
+      {showSuccessToast && (
+        <Toast
+          content={toastMessage}
+          onDismiss={() => setShowSuccessToast(false)}
+          duration={4000}
+        />
+      )}
+      <Page>
+        <BlockStack gap="500">
+          {/* Progress Indicator */}
+          <BlockStack gap="200">
             <InlineStack align="space-between" blockAlign="center">
-              <InlineStack gap="300" blockAlign="center">
-                <Icon source={FilterIcon} tone="success" />
-                <Text variant="headingSm" as="h2">Filter Products</Text>
-              </InlineStack>
+              <Badge tone="success">Step 1 of 2</Badge>
+              <ProgressBar progress={50} tone="success" />
             </InlineStack>
-            <Divider />
-            
-            <BlockStack gap="400">
-              <InlineStack gap="300" align="start" blockAlign="center">
-                <Select
-                  label=""
-                  options={fieldOptions}
-                  value={selectedField}
-                  onChange={handleFieldChange}
-                />
-                <Select
-                  label=""
-                  options={selectedField === 'description' ? descriptionConditionOptions : baseConditionOptions}
-                  value={selectedCondition}
-                  onChange={setSelectedCondition}
-                />
-                {selectedCondition !== 'empty' && (
-                  <div style={{ minWidth: '200px' }}>
-                    <TextField
-                      label=""
-                      value={filterValue}
-                      onChange={setFilterValue}
-                      autoComplete="off"
-                      placeholder="Enter search text..."
-                    />
-                  </div>
-                )}
-              </InlineStack>
-
-              <InlineStack gap="300">
-                <Button variant="primary" onClick={handlePreview} loading={isLoading} tone="success">
-                  Preview matching products
-                </Button>
-              </InlineStack>
-
-              {hasSearched && (
-                <div style={{ position: 'relative' }}>
-                  {isLoading && (
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'var(--p-color-bg-surface)',
-                      opacity: 0.8,
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      zIndex: 1
-                    }}>
-                      <Spinner size="large" />
-                    </div>
-                  )}
-                  
-                  {products.length > 0 ? (
-                    <BlockStack gap="400">
-                      <DataTable
-                        columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                        headings={['Product', 'Description', 'Product Type', 'Status', 'Price']}
-                        rows={rows}
-                        hoverable
-                        defaultSortDirection="descending"
-                        initialSortColumnIndex={0}
-                      />
-                      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-                        <Pagination
-                          label={`Page ${currentPage} of ${totalPages}`}
-                          hasPrevious={currentPage > 1}
-                          onPrevious={() => setCurrentPage(currentPage - 1)}
-                          hasNext={currentPage < totalPages}
-                          onNext={() => setCurrentPage(currentPage + 1)}
-                        />
-                      </div>
-                    </BlockStack>
-                  ) : !isLoading && (
-                    <Banner tone="success">
-                      No products found matching your criteria
-                    </Banner>
-                  )}
-                </div>
-              )}
-            </BlockStack>
           </BlockStack>
-        </Card>
 
-        {/* Progress Indicator for Step 2 */}
-        <BlockStack gap="200">
-          <InlineStack align="space-between" blockAlign="center">
-            <Badge tone="success">Step 2 of 2</Badge>
-            <ProgressBar progress={100} tone="success" />
-          </InlineStack>
-        </BlockStack>
-
-        {/* Edit Section */}
-        <Card>
-          <BlockStack gap="400">
-            <InlineStack align="space-between" blockAlign="center">
-              <InlineStack gap="300" blockAlign="center">
-                <Icon source={EditIcon} tone="success" />
-                <Text variant="headingSm" as="h2">Edit Products</Text>
-              </InlineStack>
-            </InlineStack>
-            <Divider />
-
+          {/* Filter Section */}
+          <Card>
             <BlockStack gap="400">
-              <Select
-                label=""
-                options={editOptions}
-                value={selectedEditOption}
-                onChange={handleEditOptionChange}
-                placeholder="Select an option"
-              />
+              <InlineStack align="space-between" blockAlign="center">
+                <InlineStack gap="300" blockAlign="center">
+                  <Icon source={FilterIcon} tone="success" />
+                  <Text variant="headingSm" as="h2">Filter Products</Text>
+                </InlineStack>
+              </InlineStack>
+              <Divider />
               
-              {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText' || selectedEditOption === 'replaceText' || selectedEditOption === 'capitalize' || selectedEditOption === 'truncate') && (
-                <BlockStack gap="400">
-                  <Text variant="headingSm" as="h3">
-                    {selectedEditOption === 'removeText' ? 'Remove' : 
-                     selectedEditOption === 'replaceText' ? 'Replace' : 
-                     selectedEditOption === 'capitalize' ? 'Capitalize' : 
-                     selectedEditOption === 'truncate' ? 'Truncate' : 'Add'}
-                  </Text>
-                  <div style={{ maxWidth: '400px' }}>
-                    {selectedEditOption === 'replaceText' ? (
-                      <BlockStack gap="400">
-                        <TextField
-                          label="Find"
-                          value={textToReplace}
-                          onChange={setTextToReplace}
-                          placeholder="Enter text to find"
-                          autoComplete="off"
-                        />
-                        <TextField
-                          label="Replace with"
-                          value={replacementText}
-                          onChange={setReplacementText}
-                          placeholder="Enter replacement text"
-                          autoComplete="off"
-                        />
-                      </BlockStack>
-                    ) : selectedEditOption === 'capitalize' ? (
-                      <BlockStack gap="400">
-                        <Select
-                          label="Capitalization type"
-                          options={[
-                            { label: 'First Letter Of Each Word Is Uppercase', value: 'titleCase' },
-                            { label: 'UPPERCASE', value: 'uppercase' },
-                            { label: 'lowercase', value: 'lowercase' },
-                            { label: 'First letter of title uppercase', value: 'firstLetter' }
-                          ]}
-                          value={capitalizationType}
-                          onChange={setCapitalizationType}
-                        />
-                      </BlockStack>
-                    ) : selectedEditOption === 'truncate' ? (
-                      <BlockStack gap="400">
-                        <TextField
-                          label="Number of characters"
-                          type="number"
-                          value={numberOfCharacters}
-                          onChange={setNumberOfCharacters}
-                          placeholder="Enter number of characters to keep"
-                          autoComplete="off"
-                        />
-                      </BlockStack>
-                    ) : (
+              <BlockStack gap="400">
+                <InlineStack gap="300" align="start" blockAlign="center">
+                  <Select
+                    label=""
+                    options={fieldOptions}
+                    value={selectedField}
+                    onChange={handleFieldChange}
+                  />
+                  <Select
+                    label=""
+                    options={selectedField === 'description' ? descriptionConditionOptions : baseConditionOptions}
+                    value={selectedCondition}
+                    onChange={setSelectedCondition}
+                  />
+                  {selectedCondition !== 'empty' && (
+                    <div style={{ minWidth: '200px' }}>
                       <TextField
                         label=""
-                        value={textToAdd}
-                        onChange={setTextToAdd}
-                        placeholder={
-                          selectedEditOption === 'removeText'
-                            ? 'Enter text to remove from titles'
-                            : `Enter text to add ${selectedEditOption === 'addTextBeginning' ? 'at the beginning' : 'to the end'} of titles`
-                        }
+                        value={filterValue}
+                        onChange={setFilterValue}
                         autoComplete="off"
+                        placeholder="Enter search text..."
                       />
+                    </div>
+                  )}
+                </InlineStack>
+
+                <InlineStack gap="300">
+                  <Button variant="primary" onClick={handlePreview} loading={isLoading} tone="success">
+                    Preview matching products
+                  </Button>
+                </InlineStack>
+
+                {hasSearched && (
+                  <div style={{ position: 'relative' }}>
+                    {isLoading && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'var(--p-color-bg-surface)',
+                        opacity: 0.8,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 1
+                      }}>
+                        <Spinner size="large" />
+                      </div>
+                    )}
+                    
+                    {products.length > 0 ? (
+                      <BlockStack gap="400">
+                        <DataTable
+                          columnContentTypes={['text', 'text', 'text', 'text', 'text']}
+                          headings={['Product', 'Description', 'Product Type', 'Status', 'Price']}
+                          rows={rows}
+                          hoverable
+                          defaultSortDirection="descending"
+                          initialSortColumnIndex={0}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                          <Pagination
+                            label={`Page ${currentPage} of ${totalPages}`}
+                            hasPrevious={currentPage > 1}
+                            onPrevious={() => setCurrentPage(currentPage - 1)}
+                            hasNext={currentPage < totalPages}
+                            onNext={() => setCurrentPage(currentPage + 1)}
+                          />
+                        </div>
+                      </BlockStack>
+                    ) : !isLoading && (
+                      <Banner tone="success">
+                        No products found matching your criteria
+                      </Banner>
                     )}
                   </div>
-                  <Button variant="primary" onClick={handleBulkEdit} tone="success">
-                    Start bulk edit now
-                  </Button>
-                </BlockStack>
-              )}
+                )}
+              </BlockStack>
             </BlockStack>
+          </Card>
+
+          {/* Progress Indicator for Step 2 */}
+          <BlockStack gap="200">
+            <InlineStack align="space-between" blockAlign="center">
+              <Badge tone="success">Step 2 of 2</Badge>
+              <ProgressBar progress={100} tone="success" />
+            </InlineStack>
           </BlockStack>
-        </Card>
-      </BlockStack>
-    </Page>
+
+          {/* Edit Section */}
+          <Card>
+            <BlockStack gap="400">
+              <InlineStack align="space-between" blockAlign="center">
+                <InlineStack gap="300" blockAlign="center">
+                  <Icon source={EditIcon} tone="success" />
+                  <Text variant="headingSm" as="h2">Edit Products</Text>
+                </InlineStack>
+              </InlineStack>
+              <Divider />
+
+              <BlockStack gap="400">
+                <Select
+                  label=""
+                  options={editOptions}
+                  value={selectedEditOption}
+                  onChange={handleEditOptionChange}
+                  placeholder="Select an option"
+                />
+                
+                {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText' || selectedEditOption === 'replaceText' || selectedEditOption === 'capitalize' || selectedEditOption === 'truncate') && (
+                  <BlockStack gap="400">
+                    <Text variant="headingSm" as="h3">
+                      {selectedEditOption === 'removeText' ? 'Remove' : 
+                       selectedEditOption === 'replaceText' ? 'Replace' : 
+                       selectedEditOption === 'capitalize' ? 'Capitalize' : 
+                       selectedEditOption === 'truncate' ? 'Truncate' : 'Add'}
+                    </Text>
+                    <div style={{ maxWidth: '400px' }}>
+                      {selectedEditOption === 'replaceText' ? (
+                        <BlockStack gap="400">
+                          <TextField
+                            label="Find"
+                            value={textToReplace}
+                            onChange={setTextToReplace}
+                            placeholder="Enter text to find"
+                            autoComplete="off"
+                          />
+                          <TextField
+                            label="Replace with"
+                            value={replacementText}
+                            onChange={setReplacementText}
+                            placeholder="Enter replacement text"
+                            autoComplete="off"
+                          />
+                        </BlockStack>
+                      ) : selectedEditOption === 'capitalize' ? (
+                        <BlockStack gap="400">
+                          <Select
+                            label="Capitalization type"
+                            options={[
+                              { label: 'First Letter Of Each Word Is Uppercase', value: 'titleCase' },
+                              { label: 'UPPERCASE', value: 'uppercase' },
+                              { label: 'lowercase', value: 'lowercase' },
+                              { label: 'First letter of title uppercase', value: 'firstLetter' }
+                            ]}
+                            value={capitalizationType}
+                            onChange={setCapitalizationType}
+                          />
+                        </BlockStack>
+                      ) : selectedEditOption === 'truncate' ? (
+                        <BlockStack gap="400">
+                          <TextField
+                            label="Number of characters"
+                            type="number"
+                            value={numberOfCharacters}
+                            onChange={setNumberOfCharacters}
+                            placeholder="Enter number of characters to keep"
+                            autoComplete="off"
+                          />
+                        </BlockStack>
+                      ) : (
+                        <TextField
+                          label=""
+                          value={textToAdd}
+                          onChange={setTextToAdd}
+                          placeholder={
+                            selectedEditOption === 'removeText'
+                              ? 'Enter text to remove from titles'
+                              : `Enter text to add ${selectedEditOption === 'addTextBeginning' ? 'at the beginning' : 'to the end'} of titles`
+                          }
+                          autoComplete="off"
+                        />
+                      )}
+                    </div>
+                    <Button variant="primary" onClick={handleBulkEdit} tone="success">
+                      Start bulk edit now
+                    </Button>
+                  </BlockStack>
+                )}
+              </BlockStack>
+            </BlockStack>
+          </Card>
+        </BlockStack>
+      </Page>
+    </Frame>
   );
 }
