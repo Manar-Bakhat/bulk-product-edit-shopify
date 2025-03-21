@@ -10,19 +10,35 @@ import {
   DataTable,
   Card,
   Spinner,
+  Badge,
+  ProgressBar,
+  Divider,
+  Banner,
+  Icon,
+  Pagination,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { useState, useEffect } from "react";
 import { json } from "@remix-run/node";
 import { useSubmit, useActionData, useLoaderData } from "@remix-run/react";
+import { FilterIcon, EditIcon } from '@shopify/polaris-icons';
 
 interface Product {
   id: string;
   title: string;
-  description: string;
-  productType: string;
   vendor: string;
-  status: string;
+  featuredImage?: {
+    url: string;
+    altText?: string;
+    width?: number;
+    height?: number;
+  };
+  priceRangeV2: {
+    minVariantPrice: {
+      amount: string;
+      currencyCode: string;
+    };
+  };
 }
 
 interface ActionData {
@@ -48,10 +64,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
             node {
               id
               title
-              description
-              productType
               vendor
-              status
+              featuredImage {
+                url
+                altText
+                width
+                height
+              }
+              priceRangeV2 {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
             }
           }
         }
@@ -88,9 +113,9 @@ export async function action({ request }: ActionFunctionArgs) {
         const mutation = `#graphql
           mutation productUpdate($input: ProductInput!) {
             productUpdate(input: $input) {
-              product {
-                id
-                title
+          product {
+            id
+            title
               }
               userErrors {
                 field
@@ -212,10 +237,19 @@ export async function action({ request }: ActionFunctionArgs) {
             node {
               id
               title
-              description
-              productType
               vendor
-              status
+              featuredImage {
+                url
+                altText
+                width
+                height
+              }
+              priceRangeV2 {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
             }
           }
         }
@@ -236,7 +270,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const filteredProducts = {
         edges: allProducts.filter(({ node }: { node: Product }) => {
           const fieldValue = field === 'description' 
-            ? (node.description || '').toLowerCase() 
+            ? ''
             : node.title.toLowerCase();
           
           switch (condition) {
@@ -250,8 +284,6 @@ export async function action({ request }: ActionFunctionArgs) {
               return fieldValue.startsWith(searchValue);
             case 'endsWith':
               return fieldValue.endsWith(searchValue);
-            case 'empty':
-              return !node.description || node.description.trim() === '';
             default:
               return true;
           }
@@ -291,6 +323,8 @@ export default function Index() {
   const [numberOfCharacters, setNumberOfCharacters] = useState('');
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4; // Changed from 10 to 4 items per page
 
   // Load initial products only if no search has been performed
   useEffect(() => {
@@ -299,10 +333,9 @@ export default function Index() {
       const initialProducts = loaderData.initialProducts.edges.map(({ node }) => ({
         id: node.id.replace('gid://shopify/Product/', ''),
         title: node.title,
-        description: node.description,
-        productType: node.productType,
         vendor: node.vendor,
-        status: node.status
+        featuredImage: node.featuredImage,
+        priceRangeV2: node.priceRangeV2
       }));
       setProducts(initialProducts);
     }
@@ -316,14 +349,13 @@ export default function Index() {
         const filteredProducts = actionData.data.products.edges.map(({ node }) => ({
           id: node.id.replace('gid://shopify/Product/', ''),
           title: node.title,
-          description: node.description,
-          productType: node.productType,
           vendor: node.vendor,
-          status: node.status
+          featuredImage: node.featuredImage,
+          priceRangeV2: node.priceRangeV2
         }));
         console.log('Setting filtered products:', filteredProducts);
         setProducts(filteredProducts);
-        setHasSearched(true);  // Set hasSearched to true when filtered products are set
+        setHasSearched(true);
       }
       setIsLoading(false);
     }
@@ -331,10 +363,10 @@ export default function Index() {
 
   const fieldOptions = [
     { label: 'Title', value: 'title' },
-    { label: 'Description', value: 'description' },
+    { label: 'Vendor', value: 'vendor' },
   ];
 
-  // Base condition options for non-description fields
+  // Base condition options
   const baseConditionOptions = [
     { label: 'is', value: 'is' },
     { label: 'contains', value: 'contains' },
@@ -343,22 +375,9 @@ export default function Index() {
     { label: 'ends with', value: 'endsWith' },
   ];
 
-  // Condition options for description field (without 'is')
-  const descriptionConditionOptions = [
-    { label: 'contains', value: 'contains' },
-    { label: 'does not contain', value: 'doesNotContain' },
-    { label: 'starts with', value: 'startsWith' },
-    { label: 'ends with', value: 'endsWith' },
-    { label: 'empty', value: 'empty' }
-  ];
-
   // Handle field change
   const handleFieldChange = (value: string) => {
     setSelectedField(value);
-    // If switching to description and current condition is 'is', change to 'contains'
-    if (value === 'description' && selectedCondition === 'is') {
-      setSelectedCondition('contains');
-    }
   };
 
   const handlePreview = () => {
@@ -369,6 +388,7 @@ export default function Index() {
     });
     setIsLoading(true);
     setHasSearched(true);
+    setCurrentPage(1); // Reset to first page when performing a new search
     const formData = new FormData();
     formData.append("field", selectedField);
     formData.append("condition", selectedCondition);
@@ -423,172 +443,277 @@ export default function Index() {
     submit(formData, { method: "post" });
   };
 
-  const rows = products.map((product) => [
-    product.id,
-    product.title,
-    product.description,
-    product.productType,
-    product.vendor,
-    product.status
+  // Add pagination handlers
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(products.length / itemsPerPage)));
+  };
+
+  // Modify the rows calculation to handle pagination
+  const paginatedProducts = products.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const rows = paginatedProducts.map((product) => [
+    <div style={{ 
+      width: '100px', 
+      height: '100px', 
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--p-color-bg-surface)',
+      borderRadius: '8px',
+      overflow: 'hidden'
+    }}>
+      {product.featuredImage?.url ? (
+        <img 
+          src={product.featuredImage.url}
+          alt={product.title}
+          style={{ 
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain'
+          }} 
+          onError={(e) => {
+            e.currentTarget.src = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_medium.png';
+          }}
+        />
+      ) : (
+        <img 
+          src="https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_medium.png"
+          alt="Product placeholder"
+          style={{ 
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            opacity: 0.5
+          }} 
+        />
+      )}
+    </div>,
+    <Text variant="bodyMd" as="span">{product.title}</Text>,
+    <Text variant="bodyMd" as="span">{product.vendor}</Text>,
+    <Text variant="bodyMd" as="span">
+      {`${parseFloat(product.priceRangeV2?.minVariantPrice?.amount || '0').toFixed(2)} ${product.priceRangeV2?.minVariantPrice?.currencyCode || 'USD'}`}
+    </Text>
   ]);
 
   return (
     <Page>
       <BlockStack gap="500">
-        <Text variant="headingSm" as="h1">STEP 1: SELECT WHAT PRODUCTS TO EDIT</Text>
-        <Text variant="headingSm" as="h3">Products must match the following condition:</Text>
-        
-            <Card>
+        {/* Progress Indicator */}
+                <BlockStack gap="200">
+          <InlineStack align="space-between" blockAlign="center">
+            <Badge tone="success">Step 1 of 2</Badge>
+            <ProgressBar progress={50} tone="success" />
+          </InlineStack>
+                </BlockStack>
+
+        {/* Filter Section */}
+        <Card>
           <BlockStack gap="400">
-            <InlineStack gap="300" align="start" blockAlign="center">
-              <Select
-                label=""
-                options={fieldOptions}
-                value={selectedField}
-                onChange={handleFieldChange}
-              />
-              <Select
-                label=""
-                options={selectedField === 'description' ? descriptionConditionOptions : baseConditionOptions}
-                value={selectedCondition}
-                onChange={setSelectedCondition}
-              />
-              {selectedCondition !== 'empty' && (
-                <div style={{ minWidth: '200px' }}>
-                  <TextField
-                    label=""
-                    value={filterValue}
-                    onChange={setFilterValue}
-                    autoComplete="off"
-                    placeholder="Enter search text..."
-                  />
-                </div>
-              )}
+            <InlineStack align="space-between" blockAlign="center">
+              <InlineStack gap="300" blockAlign="center">
+                <Icon source={FilterIcon} tone="success" />
+                <Text variant="headingSm" as="h2">Filter Products</Text>
+              </InlineStack>
             </InlineStack>
-
-                <InlineStack gap="300">
-              <Button variant="primary" onClick={handlePreview} loading={isLoading}>
-                Preview matching products
-                  </Button>
-            </InlineStack>
-
-            {hasSearched && (
-              <div style={{ position: 'relative' }}>
-                {isLoading && (
-                  <div style={{ 
-                    position: 'absolute', 
-                    top: 0, 
-                    left: 0, 
-                    right: 0, 
-                    bottom: 0, 
-                    background: 'rgba(255, 255, 255, 0.8)', 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    alignItems: 'center', 
-                    zIndex: 1 
-                  }}>
-                    <Spinner size="large" />
+            <Divider />
+            
+            <BlockStack gap="400">
+              <InlineStack gap="300" align="start" blockAlign="center">
+                <Select
+                  label=""
+                  options={fieldOptions}
+                  value={selectedField}
+                  onChange={handleFieldChange}
+                />
+                <Select
+                  label=""
+                  options={baseConditionOptions}
+                  value={selectedCondition}
+                  onChange={setSelectedCondition}
+                />
+                {selectedCondition !== 'empty' && (
+                  <div style={{ minWidth: '200px' }}>
+                    <TextField
+                      label=""
+                      value={filterValue}
+                      onChange={setFilterValue}
+                      autoComplete="off"
+                      placeholder="Enter search text..."
+                    />
                   </div>
                 )}
-                
-                {products.length > 0 ? (
-                  <DataTable
-                    columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
-                    headings={['ID', 'Title', 'Description', 'Product Type', 'Vendor', 'Status']}
-                    rows={rows}
-                  />
-                ) : !isLoading && (
-                  <Text variant="bodyMd" as="p">No products found</Text>
-                )}
-              </div>
-                )}
+              </InlineStack>
+
+                <InlineStack gap="300">
+                <Button variant="primary" onClick={handlePreview} loading={isLoading} tone="success">
+                  Preview matching products
+                  </Button>
+              </InlineStack>
+
+              {hasSearched && (
+                <div style={{ position: 'relative' }}>
+                  {isLoading && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: 'var(--p-color-bg-surface)',
+                      opacity: 0.8,
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      zIndex: 1
+                    }}>
+                      <Spinner size="large" />
+                    </div>
+                  )}
+                  
+                  {products.length > 0 ? (
+                    <BlockStack gap="400">
+                      <DataTable
+                        columnContentTypes={['text', 'text', 'text', 'text']}
+                        headings={[
+                          <Text variant="headingSm" as="span">Image</Text>,
+                          <Text variant="headingSm" as="span">Title</Text>,
+                          <Text variant="headingSm" as="span">Vendor</Text>,
+                          <Text variant="headingSm" as="span">Price</Text>
+                        ]}
+                        rows={rows}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+                        <Pagination
+                          hasPrevious={currentPage > 1}
+                          hasNext={currentPage < Math.ceil(products.length / itemsPerPage)}
+                          onPrevious={handlePreviousPage}
+                          onNext={handleNextPage}
+                          label={`${(currentPage - 1) * itemsPerPage + 1}-${Math.min(
+                            currentPage * itemsPerPage,
+                            products.length
+                          )} of ${products.length}`}
+                        />
+                      </div>
+                    </BlockStack>
+                  ) : !isLoading && (
+                    <Banner tone="success">
+                      No products found matching your criteria
+                    </Banner>
+                  )}
+                </div>
+              )}
+            </BlockStack>
               </BlockStack>
             </Card>
 
-        <Text variant="headingSm" as="h1">STEP 2: CHOOSE HOW TO EDIT MATCHING PRODUCTS/VARIANTS</Text>
+        {/* Progress Indicator for Step 2 */}
+                <BlockStack gap="200">
+          <InlineStack align="space-between" blockAlign="center">
+            <Badge tone="success">Step 2 of 2</Badge>
+            <ProgressBar progress={100} tone="success" />
+                    </InlineStack>
+                  </BlockStack>
+
+        {/* Edit Section */}
               <Card>
           <BlockStack gap="400">
-            <Text variant="headingSm" as="h2">Choose an option</Text>
-            <Select
-              label=""
-              options={editOptions}
-              value={selectedEditOption}
-              onChange={handleEditOptionChange}
-              placeholder="Select an option"
-            />
-            
-            {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText' || selectedEditOption === 'replaceText' || selectedEditOption === 'capitalize' || selectedEditOption === 'truncate') && (
-              <BlockStack gap="400">
-                <Text variant="headingSm" as="h3">
-                  {selectedEditOption === 'removeText' ? 'Remove' : 
-                   selectedEditOption === 'replaceText' ? 'Replace' : 
-                   selectedEditOption === 'capitalize' ? 'Capitalize' : 
-                   selectedEditOption === 'truncate' ? 'Truncate' : 'Add'}
-                </Text>
-                <div style={{ maxWidth: '400px' }}>
-                  {selectedEditOption === 'replaceText' ? (
-                    <BlockStack gap="400">
+            <InlineStack align="space-between" blockAlign="center">
+              <InlineStack gap="300" blockAlign="center">
+                <Icon source={EditIcon} tone="success" />
+                <Text variant="headingSm" as="h2">Edit Products</Text>
+              </InlineStack>
+            </InlineStack>
+            <Divider />
+
+            <BlockStack gap="400">
+              <Select
+                label=""
+                options={editOptions}
+                value={selectedEditOption}
+                onChange={handleEditOptionChange}
+                placeholder="Select an option"
+              />
+              
+              {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText' || selectedEditOption === 'replaceText' || selectedEditOption === 'capitalize' || selectedEditOption === 'truncate') && (
+                <BlockStack gap="400">
+                  <Text variant="headingSm" as="h3">
+                    {selectedEditOption === 'removeText' ? 'Remove' : 
+                     selectedEditOption === 'replaceText' ? 'Replace' : 
+                     selectedEditOption === 'capitalize' ? 'Capitalize' : 
+                     selectedEditOption === 'truncate' ? 'Truncate' : 'Add'}
+                  </Text>
+                  <div style={{ maxWidth: '400px' }}>
+                    {selectedEditOption === 'replaceText' ? (
+                      <BlockStack gap="400">
+                        <TextField
+                          label="Find"
+                          value={textToReplace}
+                          onChange={setTextToReplace}
+                          placeholder="Enter text to find"
+                          autoComplete="off"
+                        />
+                        <TextField
+                          label="Replace with"
+                          value={replacementText}
+                          onChange={setReplacementText}
+                          placeholder="Enter replacement text"
+                          autoComplete="off"
+                        />
+                      </BlockStack>
+                    ) : selectedEditOption === 'capitalize' ? (
+                      <BlockStack gap="400">
+                        <Select
+                          label="Capitalization type"
+                          options={[
+                            { label: 'First Letter Of Each Word Is Uppercase', value: 'titleCase' },
+                            { label: 'UPPERCASE', value: 'uppercase' },
+                            { label: 'lowercase', value: 'lowercase' },
+                            { label: 'First letter of title uppercase', value: 'firstLetter' }
+                          ]}
+                          value={capitalizationType}
+                          onChange={setCapitalizationType}
+                        />
+                      </BlockStack>
+                    ) : selectedEditOption === 'truncate' ? (
+                      <BlockStack gap="400">
+                        <TextField
+                          label="Number of characters"
+                          type="number"
+                          value={numberOfCharacters}
+                          onChange={setNumberOfCharacters}
+                          placeholder="Enter number of characters to keep"
+                          autoComplete="off"
+                        />
+                      </BlockStack>
+                    ) : (
                       <TextField
-                        label="Find"
-                        value={textToReplace}
-                        onChange={setTextToReplace}
-                        placeholder="Enter text to find"
+                        label=""
+                        value={textToAdd}
+                        onChange={setTextToAdd}
+                        placeholder={
+                          selectedEditOption === 'removeText'
+                            ? 'Enter text to remove from titles'
+                            : `Enter text to add ${selectedEditOption === 'addTextBeginning' ? 'at the beginning' : 'to the end'} of titles`
+                        }
                         autoComplete="off"
                       />
-                      <TextField
-                        label="Replace with"
-                        value={replacementText}
-                        onChange={setReplacementText}
-                        placeholder="Enter replacement text"
-                        autoComplete="off"
-                      />
-                    </BlockStack>
-                  ) : selectedEditOption === 'capitalize' ? (
-                    <BlockStack gap="400">
-                      <Select
-                        label="Capitalization type"
-                        options={[
-                          { label: 'First Letter Of Each Word Is Uppercase', value: 'titleCase' },
-                          { label: 'UPPERCASE', value: 'uppercase' },
-                          { label: 'lowercase', value: 'lowercase' },
-                          { label: 'First letter of title uppercase', value: 'firstLetter' }
-                        ]}
-                        value={capitalizationType}
-                        onChange={setCapitalizationType}
-                      />
-                    </BlockStack>
-                  ) : selectedEditOption === 'truncate' ? (
-                    <BlockStack gap="400">
-                      <TextField
-                        label="Number of characters"
-                        type="number"
-                        value={numberOfCharacters}
-                        onChange={setNumberOfCharacters}
-                        placeholder="Enter number of characters to keep"
-                        autoComplete="off"
-                      />
-                    </BlockStack>
-                  ) : (
-                    <TextField
-                      label=""
-                      value={textToAdd}
-                      onChange={setTextToAdd}
-                      placeholder={
-                        selectedEditOption === 'removeText'
-                          ? 'Enter text to remove from titles'
-                          : `Enter text to add ${selectedEditOption === 'addTextBeginning' ? 'at the beginning' : 'to the end'} of titles`
-                      }
-                      autoComplete="off"
-                    />
-                  )}
-                </div>
-                <Button variant="primary" onClick={handleBulkEdit}>
-                  Start bulk edit now
-                </Button>
-              </BlockStack>
-            )}
+                    )}
+                  </div>
+                  <Button variant="primary" onClick={handleBulkEdit} tone="success">
+                    Start bulk edit now
+                  </Button>
                 </BlockStack>
-              </Card>
+              )}
+            </BlockStack>
+          </BlockStack>
+        </Card>
       </BlockStack>
     </Page>
   );
