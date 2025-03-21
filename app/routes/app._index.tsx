@@ -17,13 +17,14 @@ import {
   Icon,
   Pagination,
   Toast,
-  Frame
+  Frame,
+  ButtonGroup
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { useState, useEffect } from "react";
 import { json } from "@remix-run/node";
 import { useSubmit, useActionData, useLoaderData } from "@remix-run/react";
-import { FilterIcon, EditIcon } from '@shopify/polaris-icons';
+import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 
 interface Product {
   id: string;
@@ -549,6 +550,23 @@ export default function Index() {
     }
   }, [actionData]);
 
+  const handleClearFilters = () => {
+    setSelectedField('title');
+    setSelectedCondition('contains');
+    setFilterValue('');
+    setHasSearched(false);
+    setProducts(loaderData.initialProducts.edges.map(({ node }) => ({
+      id: node.id.replace('gid://shopify/Product/', ''),
+      title: node.title,
+      description: node.description,
+      productType: node.productType,
+      vendor: node.vendor,
+      status: node.status,
+      featuredImage: node.featuredImage,
+      priceRangeV2: node.priceRangeV2
+    })));
+  };
+
   return (
     <Frame>
       {showSuccessToast && (
@@ -576,6 +594,14 @@ export default function Index() {
                   <Icon source={FilterIcon} tone="success" />
                   <Text variant="headingSm" as="h2">Filter Products</Text>
                 </InlineStack>
+                <Button
+                  icon={ResetIcon}
+                  onClick={handleClearFilters}
+                  disabled={!hasSearched}
+                  tone="success"
+                >
+                  Clear filters
+                </Button>
               </InlineStack>
               <Divider />
               
