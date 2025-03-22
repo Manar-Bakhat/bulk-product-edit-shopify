@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a7db49394bfec100b10f31a12f89f98d"
-application_url = "https://ports-block-situations-contrast.trycloudflare.com"
+application_url = "https://where-richard-minimize-promises.trycloudflare.com"
 embedded = true
 name = "bulk-product-edit"
 handle = "bulk-product-edit-6"
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://ports-block-situations-contrast.trycloudflare.com/auth/callback",
-  "https://ports-block-situations-contrast.trycloudflare.com/auth/shopify/callback",
-  "https://ports-block-situations-contrast.trycloudflare.com/api/auth/callback"
+  "https://where-richard-minimize-promises.trycloudflare.com/auth/callback",
+  "https://where-richard-minimize-promises.trycloudflare.com/auth/shopify/callback",
+  "https://where-richard-minimize-promises.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

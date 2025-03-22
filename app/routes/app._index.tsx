@@ -200,42 +200,81 @@ export async function action({ request }: ActionFunctionArgs) {
 
   console.log('Filter params:', { field, condition, value });
 
-  let queryString = '';
-  if (value) {
-    // Convert field names to match Shopify's search syntax
-    const fieldMap: { [key: string]: string } = {
-      title: 'title',
-      collection: 'collection',
-      productId: 'id',
-      description: 'description',
-      price: 'variants.price'
-    };
-
-    const searchField = fieldMap[field] || field;
-    const escapedValue = value.replace(/['"]/g, '').trim(); // Remove quotes and trim whitespace
-
-    switch (condition) {
-      case 'is':
-        queryString = `${searchField}:'${escapedValue}'`;
-        break;
-      case 'contains':
-        // For contains, we use a simple search with the field name
-        queryString = `${searchField}:*${escapedValue}*`;
-        break;
-      case 'doesNotContain':
-        queryString = `-${searchField}:*${escapedValue}*`;
-        break;
-      case 'startsWith':
-      case 'endsWith':
-        // Get all products containing the value and filter them in memory
-        queryString = `${searchField}:*${escapedValue}*`;
-        break;
-    }
-  }
-
-  console.log('Generated query string:', queryString);
-
   try {
+    if (field === 'productId') {
+      // Direct product query for product ID searches
+      const response = await admin.graphql(
+        `#graphql
+        query {
+          product(id: "gid://shopify/Product/${value}") {
+            id
+            title
+            description
+            productType
+            vendor
+            status
+            featuredImage {
+              url
+              altText
+            }
+            priceRangeV2 {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+          }
+        }`
+      );
+
+      const responseJson = await response.json();
+      console.log('Product query response:', responseJson);
+
+      if (responseJson.data?.product) {
+        return json({
+          data: {
+            products: {
+              edges: [{
+                node: responseJson.data.product
+              }]
+            }
+          }
+        });
+      }
+      return json({ error: 'Product not found' });
+    }
+
+    // Regular search query for other fields
+    let queryString = '';
+    if (value) {
+      const fieldMap: { [key: string]: string } = {
+        title: 'title',
+        collection: 'collection',
+        productId: 'id',
+        description: 'description',
+        price: 'variants.price'
+      };
+
+      const searchField = fieldMap[field] || field;
+      const escapedValue = value.replace(/['"]/g, '').trim();
+
+      switch (condition) {
+        case 'is':
+          queryString = `${searchField}:'${escapedValue}'`;
+          break;
+        case 'contains':
+          queryString = `${searchField}:*${escapedValue}*`;
+          break;
+        case 'doesNotContain':
+          queryString = `-${searchField}:*${escapedValue}*`;
+          break;
+        case 'startsWith':
+        case 'endsWith':
+          queryString = `${searchField}:*${escapedValue}*`;
+          break;
+      }
+    }
+
     const graphqlQuery = `#graphql
       query {
         products(first: 50, query: "${queryString}") {
@@ -263,13 +302,30 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     `;
     
+    console.log('Search parameters:', { field, condition, value });
+    console.log('Query string:', queryString);
     console.log('Full GraphQL query:', graphqlQuery);
 
     const response = await admin.graphql(graphqlQuery);
     const responseJson = await response.json();
-    console.log('Filtered products response:', responseJson);
+    console.log('Raw API response:', responseJson);
 
-    if (responseJson.data?.products?.edges) {
+    if (field === 'productId') {
+      // Handle single product response
+      if (responseJson.data?.product) {
+        const product = responseJson.data.product;
+        return json({
+          data: {
+            products: {
+              edges: [{
+                node: product
+              }]
+            }
+          }
+        });
+      }
+    } else if (responseJson.data?.products?.edges) {
+      // Handle product list response
       const allProducts = responseJson.data.products.edges;
       const searchValue = value.toLowerCase().trim();
       
@@ -444,6 +500,7 @@ export default function Index() {
   const fieldOptions = [
     { label: 'Title', value: 'title' },
     { label: 'Description', value: 'description' },
+    { label: 'Product ID', value: 'productId' }
   ];
 
   // Base condition options for non-description fields
@@ -453,6 +510,11 @@ export default function Index() {
     { label: 'does not contain', value: 'doesNotContain' },
     { label: 'starts with', value: 'startsWith' },
     { label: 'ends with', value: 'endsWith' },
+  ];
+
+  // Product ID condition options (only 'is')
+  const productIdConditionOptions = [
+    { label: 'is', value: 'is' }
   ];
 
   // Condition options for description field (without 'is')
@@ -470,6 +532,10 @@ export default function Index() {
     // If switching to description and current condition is 'is', change to 'contains'
     if (value === 'description' && selectedCondition === 'is') {
       setSelectedCondition('contains');
+    }
+    // If switching to productId, change condition to 'is'
+    if (value === 'productId') {
+      setSelectedCondition('is');
     }
   };
 
@@ -576,15 +642,15 @@ export default function Index() {
           duration={4000}
         />
       )}
-      <Page>
-        <BlockStack gap="500">
+    <Page>
+      <BlockStack gap="500">
           {/* Progress Indicator */}
-          <BlockStack gap="200">
+                <BlockStack gap="200">
             <InlineStack align="space-between" blockAlign="center">
               <Badge tone="success">Step 1 of 2</Badge>
               <ProgressBar progress={50} tone="success" />
             </InlineStack>
-          </BlockStack>
+                </BlockStack>
 
           {/* Filter Section */}
           <Card>
@@ -615,7 +681,13 @@ export default function Index() {
                   />
                   <Select
                     label=""
-                    options={selectedField === 'description' ? descriptionConditionOptions : baseConditionOptions}
+                    options={
+                      selectedField === 'description' 
+                        ? descriptionConditionOptions 
+                        : selectedField === 'productId'
+                          ? productIdConditionOptions
+                          : baseConditionOptions
+                    }
                     value={selectedCondition}
                     onChange={setSelectedCondition}
                   />
@@ -686,15 +758,15 @@ export default function Index() {
                   </div>
                 )}
               </BlockStack>
-            </BlockStack>
-          </Card>
+              </BlockStack>
+            </Card>
 
           {/* Progress Indicator for Step 2 */}
-          <BlockStack gap="200">
+                <BlockStack gap="200">
             <InlineStack align="space-between" blockAlign="center">
               <Badge tone="success">Step 2 of 2</Badge>
               <ProgressBar progress={100} tone="success" />
-            </InlineStack>
+                    </InlineStack>
           </BlockStack>
 
           {/* Edit Section */}
@@ -704,8 +776,8 @@ export default function Index() {
                 <InlineStack gap="300" blockAlign="center">
                   <Icon source={EditIcon} tone="success" />
                   <Text variant="headingSm" as="h2">Edit Products</Text>
-                </InlineStack>
-              </InlineStack>
+                    </InlineStack>
+                    </InlineStack>
               <Divider />
 
               <BlockStack gap="400">
@@ -724,7 +796,7 @@ export default function Index() {
                        selectedEditOption === 'replaceText' ? 'Replace' : 
                        selectedEditOption === 'capitalize' ? 'Capitalize' : 
                        selectedEditOption === 'truncate' ? 'Truncate' : 'Add'}
-                    </Text>
+                      </Text>
                     <div style={{ maxWidth: '400px' }}>
                       {selectedEditOption === 'replaceText' ? (
                         <BlockStack gap="400">
@@ -787,11 +859,11 @@ export default function Index() {
                     </Button>
                   </BlockStack>
                 )}
-              </BlockStack>
-            </BlockStack>
-          </Card>
-        </BlockStack>
-      </Page>
+                </BlockStack>
+                </BlockStack>
+              </Card>
+      </BlockStack>
+    </Page>
     </Frame>
   );
 }
