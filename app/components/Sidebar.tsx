@@ -1,17 +1,21 @@
+/**
+ * Sidebar Component
+ * This component provides navigation between different sections of the application.
+ * It includes links to the dashboard and bulk editing features.
+ * 
+ * @author Manar Bakhat
+ */
+
 import { useState } from 'react';
 import {
   Icon,
   Text,
   Tooltip,
-  Badge,
-  Button,
   Box,
   BlockStack
 } from "@shopify/polaris";
 import {
   HomeIcon,
-  ChevronRightIcon,
-  ChevronLeftIcon,
   TextAlignCenterIcon,
   CashDollarIcon
 } from '@shopify/polaris-icons';

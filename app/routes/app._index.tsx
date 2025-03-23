@@ -1,3 +1,15 @@
+/**
+ * Index Page Component
+ * This component serves as the main bulk editing interface.
+ * It provides functionality to:
+ * 1. Filter products based on various criteria
+ * 2. Preview filtered products
+ * 3. Edit product titles in bulk with various options
+ * 4. Show success messages using Toast notifications
+ * 
+ * @author Manar Bakhat
+ */
+
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import {
   Page,
@@ -26,6 +38,10 @@ import { json } from "@remix-run/node";
 import { useSubmit, useActionData, useLoaderData } from "@remix-run/react";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 
+/**
+ * Product interface defining the structure of product data
+ * Used for type safety and data handling throughout the component
+ */
 interface Product {
   id: string;
   title: string;
@@ -45,6 +61,10 @@ interface Product {
   };
 }
 
+/**
+ * ActionData interface for handling API responses
+ * Used to type the response data from the server
+ */
 interface ActionData {
   data?: {
     products: {
@@ -57,6 +77,10 @@ interface ActionData {
   success?: boolean;
 }
 
+/**
+ * Loader function to fetch initial products data
+ * Retrieves the first 50 products from the Shopify store
+ */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
 
@@ -98,11 +122,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 };
 
+/**
+ * Action function to handle form submissions
+ * Processes both product filtering and bulk title editing
+ */
 export async function action({ request }: ActionFunctionArgs) {
   const { admin } = await authenticate.admin(request);
   const formData = await request.formData();
   const actionType = formData.get("actionType") as string;
 
+  // Handle bulk title editing
   if (actionType === "bulkEdit") {
     const productIds = formData.get("productIds") as string;
     const textToAdd = formData.get("textToAdd") as string;
@@ -114,14 +143,14 @@ export async function action({ request }: ActionFunctionArgs) {
     const productTitles = JSON.parse(formData.get("productTitles") as string);
 
     try {
-      // Update each product's title
+      // Update each product's title based on the selected edit type
       for (const productId of productIdsArray) {
         const mutation = `#graphql
           mutation productUpdate($input: ProductInput!) {
             productUpdate(input: $input) {
-          product {
-            id
-            title
+              product {
+                id
+                title
               }
               userErrors {
                 field
@@ -134,6 +163,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const currentTitle = productTitles[productId] || '';
         let newTitle = currentTitle;
 
+        // Apply the selected title modification
         switch (editType) {
           case 'addTextBeginning':
             newTitle = `${textToAdd} ${currentTitle}`;
@@ -193,7 +223,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Existing filter logic
+  // Handle product filtering
   const field = formData.get("field") as string;
   const condition = formData.get("condition") as string;
   const value = formData.get("value") as string;
@@ -201,8 +231,8 @@ export async function action({ request }: ActionFunctionArgs) {
   console.log('Filter params:', { field, condition, value });
 
   try {
+    // Handle product ID search
     if (field === 'productId') {
-      // Direct product query for product ID searches
       const response = await admin.graphql(
         `#graphql
         query {
@@ -244,7 +274,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return json({ error: 'Product not found' });
     }
 
-    // Regular search query for other fields
+    // Handle regular search for other fields
     let queryString = '';
     if (value) {
       const fieldMap: { [key: string]: string } = {
@@ -275,6 +305,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
+    // Execute the search query
     const graphqlQuery = `#graphql
       query {
         products(first: 50, query: "${queryString}") {
@@ -310,8 +341,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const responseJson = await response.json();
     console.log('Raw API response:', responseJson);
 
+    // Process and filter the results
     if (field === 'productId') {
-      // Handle single product response
       if (responseJson.data?.product) {
         const product = responseJson.data.product;
         return json({
@@ -325,11 +356,9 @@ export async function action({ request }: ActionFunctionArgs) {
         });
       }
     } else if (responseJson.data?.products?.edges) {
-      // Handle product list response
       const allProducts = responseJson.data.products.edges;
       const searchValue = value.toLowerCase().trim();
       
-      // Filter the products based on condition
       const filteredProducts = {
         edges: allProducts.filter(({ node }: { node: Product }) => {
           const fieldValue = field === 'description' 
@@ -372,7 +401,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 }
 
+/**
+ * Index Component
+ * Main component for the bulk editing interface
+ */
 export default function Index() {
+  // State management for the component
   const loaderData = useLoaderData<{ initialProducts: { edges: Array<{ node: Product }> } }>();
   const [selectedField, setSelectedField] = useState('title');
   const [selectedCondition, setSelectedCondition] = useState('contains');
@@ -393,7 +427,7 @@ export default function Index() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  // Load initial products only if no search has been performed
+  // Load initial products
   useEffect(() => {
     if (!hasSearched && loaderData?.initialProducts?.edges) {
       console.log('Setting initial products:', loaderData.initialProducts);
@@ -428,7 +462,7 @@ export default function Index() {
         }));
         console.log('Setting filtered products:', filteredProducts);
         setProducts(filteredProducts);
-        setHasSearched(true);  // Set hasSearched to true when filtered products are set
+        setHasSearched(true);
       }
       setIsLoading(false);
     }
@@ -440,6 +474,7 @@ export default function Index() {
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = products.slice(startIndex, endIndex);
 
+  // Generate table rows
   const rows = currentProducts.map((product) => [
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
       <img 
@@ -497,13 +532,13 @@ export default function Index() {
     </div>
   ]);
 
+  // Filter options configuration
   const fieldOptions = [
     { label: 'Title', value: 'title' },
     { label: 'Description', value: 'description' },
     { label: 'Product ID', value: 'productId' }
   ];
 
-  // Base condition options for non-description fields
   const baseConditionOptions = [
     { label: 'is', value: 'is' },
     { label: 'contains', value: 'contains' },
@@ -512,12 +547,10 @@ export default function Index() {
     { label: 'ends with', value: 'endsWith' },
   ];
 
-  // Product ID condition options (only 'is')
   const productIdConditionOptions = [
     { label: 'is', value: 'is' }
   ];
 
-  // Condition options for description field (without 'is')
   const descriptionConditionOptions = [
     { label: 'contains', value: 'contains' },
     { label: 'does not contain', value: 'doesNotContain' },
@@ -526,14 +559,22 @@ export default function Index() {
     { label: 'empty', value: 'empty' }
   ];
 
-  // Handle field change
+  // Title editing options
+  const editOptions = [
+    { label: 'Add text at the beginning of title', value: 'addTextBeginning' },
+    { label: 'Add text to the end of title', value: 'addTextEnd' },
+    { label: 'Find and remove text from title', value: 'removeText' },
+    { label: 'Find and replace text in title', value: 'replaceText' },
+    { label: 'Change title capitalization', value: 'capitalize' },
+    { label: 'Keep the first X number of characters', value: 'truncate' }
+  ];
+
+  // Event handlers
   const handleFieldChange = (value: string) => {
     setSelectedField(value);
-    // If switching to description and current condition is 'is', change to 'contains'
     if (value === 'description' && selectedCondition === 'is') {
       setSelectedCondition('contains');
     }
-    // If switching to productId, change condition to 'is'
     if (value === 'productId') {
       setSelectedCondition('is');
     }
@@ -554,15 +595,6 @@ export default function Index() {
     submit(formData, { method: "post" });
   };
 
-  const editOptions = [
-    { label: 'Add text at the beginning of title', value: 'addTextBeginning' },
-    { label: 'Add text to the end of title', value: 'addTextEnd' },
-    { label: 'Find and remove text from title', value: 'removeText' },
-    { label: 'Find and replace text in title', value: 'replaceText' },
-    { label: 'Change title capitalization', value: 'capitalize' },
-    { label: 'Keep the first X number of characters', value: 'truncate' }
-  ];
-
   const handleEditOptionChange = (value: string) => {
     setSelectedEditOption(value);
   };
@@ -572,8 +604,6 @@ export default function Index() {
       if (!textToReplace.trim() || !replacementText.trim()) {
         return;
       }
-    } else if (selectedEditOption === 'capitalize') {
-      // No validation needed for capitalization
     } else if (selectedEditOption === 'truncate') {
       const num = parseInt(numberOfCharacters);
       if (isNaN(num) || num <= 0) {
@@ -601,12 +631,11 @@ export default function Index() {
     submit(formData, { method: "post" });
   };
 
-  // Add effect to handle success toast
+  // Handle success toast
   useEffect(() => {
     if (actionData?.success) {
       setToastMessage('Products updated successfully!');
       setShowSuccessToast(true);
-      // Reset form fields
       setSelectedEditOption('');
       setTextToAdd('');
       setTextToReplace('');
@@ -642,15 +671,15 @@ export default function Index() {
           duration={4000}
         />
       )}
-    <Page>
-      <BlockStack gap="500">
+      <Page>
+        <BlockStack gap="500">
           {/* Progress Indicator */}
-                <BlockStack gap="200">
+          <BlockStack gap="200">
             <InlineStack align="space-between" blockAlign="center">
               <Badge tone="success">Step 1 of 2</Badge>
               <ProgressBar progress={50} tone="success" />
             </InlineStack>
-                </BlockStack>
+          </BlockStack>
 
           {/* Filter Section */}
           <Card>
@@ -758,15 +787,15 @@ export default function Index() {
                   </div>
                 )}
               </BlockStack>
-              </BlockStack>
-            </Card>
+            </BlockStack>
+          </Card>
 
           {/* Progress Indicator for Step 2 */}
-                <BlockStack gap="200">
+          <BlockStack gap="200">
             <InlineStack align="space-between" blockAlign="center">
               <Badge tone="success">Step 2 of 2</Badge>
               <ProgressBar progress={100} tone="success" />
-                    </InlineStack>
+            </InlineStack>
           </BlockStack>
 
           {/* Edit Section */}
@@ -776,8 +805,8 @@ export default function Index() {
                 <InlineStack gap="300" blockAlign="center">
                   <Icon source={EditIcon} tone="success" />
                   <Text variant="headingSm" as="h2">Edit Products</Text>
-                    </InlineStack>
-                    </InlineStack>
+                </InlineStack>
+              </InlineStack>
               <Divider />
 
               <BlockStack gap="400">
@@ -796,7 +825,7 @@ export default function Index() {
                        selectedEditOption === 'replaceText' ? 'Replace' : 
                        selectedEditOption === 'capitalize' ? 'Capitalize' : 
                        selectedEditOption === 'truncate' ? 'Truncate' : 'Add'}
-                      </Text>
+                    </Text>
                     <div style={{ maxWidth: '400px' }}>
                       {selectedEditOption === 'replaceText' ? (
                         <BlockStack gap="400">
@@ -859,11 +888,11 @@ export default function Index() {
                     </Button>
                   </BlockStack>
                 )}
-                </BlockStack>
-                </BlockStack>
-              </Card>
-      </BlockStack>
-    </Page>
+              </BlockStack>
+            </BlockStack>
+          </Card>
+        </BlockStack>
+      </Page>
     </Frame>
   );
 }

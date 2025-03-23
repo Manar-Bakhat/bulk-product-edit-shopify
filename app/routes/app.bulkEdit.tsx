@@ -1,3 +1,13 @@
+/**
+ * Bulk Edit Page Component
+ * This component serves as a container for the bulk editing features.
+ * It handles:
+ * 1. Navigation between different editing sections (title, price)
+ * 2. Display of the appropriate editing component based on the selected section
+ * 
+ * @author Manar Bakhat
+ */
+
 import { useState, useEffect } from "react";
 import {
   Page,

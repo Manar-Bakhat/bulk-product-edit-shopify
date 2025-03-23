@@ -1,3 +1,15 @@
+/**
+ * EditTitle Component
+ * This component handles bulk editing of product titles.
+ * It provides functionality to:
+ * 1. Filter products based on various criteria
+ * 2. Preview filtered products
+ * 3. Edit product titles in bulk with various options
+ * 4. Show success messages using SweetAlert2
+ * 
+ * @author Manar Bakhat
+ */
+
 import { useState, useEffect } from "react";
 import {
   Text,
@@ -20,6 +32,10 @@ import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSubmit, useActionData, useLoaderData } from "@remix-run/react";
 import Swal from 'sweetalert2';
 
+/**
+ * Product interface defining the structure of product data
+ * Used for type safety and data handling throughout the component
+ */
 interface Product {
   id: string;
   title: string;
@@ -39,6 +55,10 @@ interface Product {
   };
 }
 
+/**
+ * ActionData interface for handling API responses
+ * Used to type the response data from the server
+ */
 interface ActionData {
   data?: {
     products: {
@@ -51,27 +71,41 @@ interface ActionData {
   success?: boolean;
 }
 
+/**
+ * EditTitle Component
+ * Main component for bulk title editing functionality
+ */
 export function EditTitle() {
+  // State for filtering
   const [selectedField, setSelectedField] = useState('title');
   const [selectedCondition, setSelectedCondition] = useState('contains');
   const [filterValue, setFilterValue] = useState('');
+  
+  // State for products and UI
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  
+  // State for title editing options
   const [selectedEditOption, setSelectedEditOption] = useState('');
   const [textToAdd, setTextToAdd] = useState('');
   const [textToReplace, setTextToReplace] = useState('');
   const [replacementText, setReplacementText] = useState('');
   const [capitalizationType, setCapitalizationType] = useState('titleCase');
   const [numberOfCharacters, setNumberOfCharacters] = useState('');
-  const submit = useSubmit();
-  const actionData = useActionData<ActionData>();
+  
+  // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
 
-  // Handle filtered products
+  // Remix hooks for form submission and data handling
+  const submit = useSubmit();
+  const actionData = useActionData<ActionData>();
+
+  /**
+   * Effect to handle filtered products from the server
+   * Updates the products state when new data is received
+   */
   useEffect(() => {
     if (actionData) {
       if (actionData.data?.products?.edges) {
@@ -92,12 +126,16 @@ export function EditTitle() {
     }
   }, [actionData]);
 
-  // Calculate pagination
+  // Calculate pagination values
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = products.slice(startIndex, endIndex);
 
+  /**
+   * Generates table rows for the products data table
+   * Each row includes product image, title, vendor, and action buttons
+   */
   const rows = currentProducts.map((product) => [
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
       <img 
@@ -116,6 +154,24 @@ export function EditTitle() {
       <div>
         <Text variant="bodyMd" as="p" fontWeight="bold">{product.title}</Text>
         <Text variant="bodySm" as="p" tone="subdued">{product.vendor}</Text>
+        {/*  
+        <InlineStack gap="200" blockAlign="center">
+          <Button
+            size="slim"
+            tone="success"
+            onClick={() => window.open(`/admin/products/${product.id}`, '_blank')}
+          >
+            Go to Shopify Admin
+          </Button>
+          <Button
+            size="slim"
+            tone="success"
+            onClick={() => window.open(`/admin/online-store/products/${product.id}`, '_blank')}
+          >
+            Go to Online Store
+          </Button>
+        </InlineStack>
+        */}
       </div>
     </div>,
     <div style={{ 
@@ -155,13 +211,13 @@ export function EditTitle() {
     </div>
   ]);
 
+  // Filter options configuration
   const fieldOptions = [
     { label: 'Title', value: 'title' },
     { label: 'Description', value: 'description' },
     { label: 'Product ID', value: 'productId' }
   ];
 
-  // Base condition options for non-description fields
   const baseConditionOptions = [
     { label: 'is', value: 'is' },
     { label: 'contains', value: 'contains' },
@@ -170,12 +226,10 @@ export function EditTitle() {
     { label: 'ends with', value: 'endsWith' },
   ];
 
-  // Product ID condition options (only 'is')
   const productIdConditionOptions = [
     { label: 'is', value: 'is' }
   ];
 
-  // Condition options for description field (without 'is')
   const descriptionConditionOptions = [
     { label: 'contains', value: 'contains' },
     { label: 'does not contain', value: 'doesNotContain' },
@@ -184,19 +238,34 @@ export function EditTitle() {
     { label: 'empty', value: 'empty' }
   ];
 
-  // Handle field change
+  // Title editing options
+  const editOptions = [
+    { label: 'Add text at the beginning of title', value: 'addTextBeginning' },
+    { label: 'Add text to the end of title', value: 'addTextEnd' },
+    { label: 'Find and remove text from title', value: 'removeText' },
+    { label: 'Find and replace text in title', value: 'replaceText' },
+    { label: 'Change title capitalization', value: 'capitalize' },
+    { label: 'Keep the first X number of characters', value: 'truncate' }
+  ];
+
+  /**
+   * Handles field selection changes
+   * Updates condition options based on selected field
+   */
   const handleFieldChange = (value: string) => {
     setSelectedField(value);
-    // If switching to description and current condition is 'is', change to 'contains'
     if (value === 'description' && selectedCondition === 'is') {
       setSelectedCondition('contains');
     }
-    // If switching to productId, change condition to 'is'
     if (value === 'productId') {
       setSelectedCondition('is');
     }
   };
 
+  /**
+   * Handles product preview request
+   * Submits filter criteria to the server
+   */
   const handlePreview = () => {
     setIsLoading(true);
     setHasSearched(true);
@@ -207,26 +276,15 @@ export function EditTitle() {
     submit(formData, { method: "post" });
   };
 
-  const editOptions = [
-    { label: 'Add text at the beginning of title', value: 'addTextBeginning' },
-    { label: 'Add text to the end of title', value: 'addTextEnd' },
-    { label: 'Find and remove text from title', value: 'removeText' },
-    { label: 'Find and replace text in title', value: 'replaceText' },
-    { label: 'Change title capitalization', value: 'capitalize' },
-    { label: 'Keep the first X number of characters', value: 'truncate' }
-  ];
-
-  const handleEditOptionChange = (value: string) => {
-    setSelectedEditOption(value);
-  };
-
+  /**
+   * Handles bulk title editing
+   * Submits edit criteria to the server
+   */
   const handleBulkEdit = () => {
     if (selectedEditOption === 'replaceText') {
       if (!textToReplace.trim() || !replacementText.trim()) {
         return;
       }
-    } else if (selectedEditOption === 'capitalize') {
-      // No validation needed for capitalization
     } else if (selectedEditOption === 'truncate') {
       const num = parseInt(numberOfCharacters);
       if (isNaN(num) || num <= 0) {
@@ -254,17 +312,18 @@ export function EditTitle() {
     submit(formData, { method: "post" });
   };
 
-  // Add effect to handle success alert
+  /**
+   * Effect to handle successful bulk edit
+   * Shows success message and resets form
+   */
   useEffect(() => {
     if (actionData?.success) {
-      console.log('Success detected, showing alert');
       Swal.fire({
         title: 'Success!',
         text: 'Products updated successfully!',
         icon: 'success',
         confirmButtonText: 'OK'
       }).then(() => {
-        // Reset form fields after alert is closed
         setSelectedEditOption('');
         setTextToAdd('');
         setTextToReplace('');
@@ -275,6 +334,10 @@ export function EditTitle() {
     }
   }, [actionData]);
 
+  /**
+   * Handles filter reset
+   * Clears all filter states and resets to initial values
+   */
   const handleClearFilters = () => {
     setSelectedField('title');
     setSelectedCondition('contains');
@@ -426,7 +489,7 @@ export function EditTitle() {
               label=""
               options={editOptions}
               value={selectedEditOption}
-              onChange={handleEditOptionChange}
+              onChange={setSelectedEditOption}
               placeholder="Select an option"
             />
             

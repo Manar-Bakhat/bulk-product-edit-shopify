@@ -1,3 +1,14 @@
+/**
+ * EditPrice Component
+ * This component handles bulk editing of product prices.
+ * It provides functionality to:
+ * 1. Filter products based on various criteria
+ * 2. Preview filtered products
+ * 3. Navigate to Shopify Admin and Online Store
+ * 
+ * @author Manar Bakhat
+ */
+
 import { useState, useEffect } from "react";
 import {
   Text,
@@ -19,6 +30,10 @@ import {
 import { FilterIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSubmit, useActionData, useLoaderData } from "@remix-run/react";
 
+/**
+ * Product interface defining the structure of product data
+ * Used for type safety and data handling throughout the component
+ */
 interface Product {
   id: string;
   title: string;
@@ -38,6 +53,10 @@ interface Product {
   };
 }
 
+/**
+ * ActionData interface for handling API responses
+ * Used to type the response data from the server
+ */
 interface ActionData {
   data?: {
     products: {
@@ -49,19 +68,33 @@ interface ActionData {
   error?: string;
 }
 
+/**
+ * EditPrice Component
+ * Main component for product filtering and price editing preparation
+ */
 export function EditPrice() {
+  // State for filtering
   const [selectedField, setSelectedField] = useState('title');
   const [selectedCondition, setSelectedCondition] = useState('contains');
   const [filterValue, setFilterValue] = useState('');
+  
+  // State for products and UI
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const submit = useSubmit();
-  const actionData = useActionData<ActionData>();
+  
+  // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
 
-  // Handle filtered products
+  // Remix hooks for form submission and data handling
+  const submit = useSubmit();
+  const actionData = useActionData<ActionData>();
+
+  /**
+   * Effect to handle filtered products from the server
+   * Updates the products state when new data is received
+   */
   useEffect(() => {
     if (actionData) {
       if (actionData.data?.products?.edges) {
@@ -82,12 +115,16 @@ export function EditPrice() {
     }
   }, [actionData]);
 
-  // Calculate pagination
+  // Calculate pagination values
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = products.slice(startIndex, endIndex);
 
+  /**
+   * Generates table rows for the products data table
+   * Each row includes product image, title, vendor, and action buttons
+   */
   const rows = currentProducts.map((product) => [
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
       <img 
@@ -106,7 +143,6 @@ export function EditPrice() {
       <div>
         <Text variant="bodyMd" as="p" fontWeight="bold">{product.title}</Text>
         <Text variant="bodySm" as="p" tone="subdued">{product.vendor}</Text>
-        {/*      
         <InlineStack gap="200" blockAlign="center">
           <Button
             size="slim"
@@ -123,7 +159,6 @@ export function EditPrice() {
             Go to Online Store
           </Button>
         </InlineStack>
-        */}
       </div>
     </div>,
     <div style={{ 
@@ -163,13 +198,13 @@ export function EditPrice() {
     </div>
   ]);
 
+  // Filter options configuration
   const fieldOptions = [
     { label: 'Title', value: 'title' },
     { label: 'Description', value: 'description' },
     { label: 'Product ID', value: 'productId' }
   ];
 
-  // Base condition options for non-description fields
   const baseConditionOptions = [
     { label: 'is', value: 'is' },
     { label: 'contains', value: 'contains' },
@@ -178,12 +213,10 @@ export function EditPrice() {
     { label: 'ends with', value: 'endsWith' },
   ];
 
-  // Product ID condition options (only 'is')
   const productIdConditionOptions = [
     { label: 'is', value: 'is' }
   ];
 
-  // Condition options for description field (without 'is')
   const descriptionConditionOptions = [
     { label: 'contains', value: 'contains' },
     { label: 'does not contain', value: 'doesNotContain' },
@@ -192,19 +225,24 @@ export function EditPrice() {
     { label: 'empty', value: 'empty' }
   ];
 
-  // Handle field change
+  /**
+   * Handles field selection changes
+   * Updates condition options based on selected field
+   */
   const handleFieldChange = (value: string) => {
     setSelectedField(value);
-    // If switching to description and current condition is 'is', change to 'contains'
     if (value === 'description' && selectedCondition === 'is') {
       setSelectedCondition('contains');
     }
-    // If switching to productId, change condition to 'is'
     if (value === 'productId') {
       setSelectedCondition('is');
     }
   };
 
+  /**
+   * Handles product preview request
+   * Submits filter criteria to the server
+   */
   const handlePreview = () => {
     setIsLoading(true);
     setHasSearched(true);
@@ -215,6 +253,10 @@ export function EditPrice() {
     submit(formData, { method: "post" });
   };
 
+  /**
+   * Handles filter reset
+   * Clears all filter states and resets to initial values
+   */
   const handleClearFilters = () => {
     setSelectedField('title');
     setSelectedCondition('contains');
