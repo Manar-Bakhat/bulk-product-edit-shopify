@@ -26,74 +26,64 @@ interface SidebarItem {
   id: string;
   icon: React.FC;
   label: string;
-  onClick: () => void;
-  badge?: string;
+  sectionId: string;
 }
 
 interface SidebarProps {
   onExpandedChange?: (expanded: boolean) => void;
+  onSectionChange?: (section: string) => void;
+  activeSection?: string;
 }
 
-const sidebarSections: SidebarSection[] = [
-  {
-    id: 'home',
-    title: '',
-    items: [
-      {
-        id: 'home',
-        icon: HomeIcon,
-        label: 'Home',
-        onClick: () => console.log('Home clicked')
-      }
-    ]
-  },
-  {
-    id: 'bulkEdit',
-    title: 'Bulk Edit',
-    items: [
-      {
-        id: 'title',
-        icon: TextAlignCenterIcon,
-        label: 'Edit Title',
-        onClick: () => console.log('Edit Title clicked')
-      },
-      {
-        id: 'price',
-        icon: CashDollarIcon,
-        label: 'Edit Price',
-        onClick: () => console.log('Edit Price clicked')
-      }
-    ]
-  }
-];
-
-export function Sidebar({ onExpandedChange }: SidebarProps) {
+export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-
-  const toggleSidebar = () => {
-    const newExpanded = !isExpanded;
-    setIsExpanded(newExpanded);
-    onExpandedChange?.(newExpanded);
-    if (!newExpanded) {
-      setActiveSection(null);
-    }
-  };
 
   const handleMouseEnter = () => {
-    if (!isExpanded) {
-      setIsExpanded(true);
-      onExpandedChange?.(true);
-    }
+    setIsExpanded(true);
+    onExpandedChange?.(true);
   };
 
   const handleMouseLeave = () => {
-    if (isExpanded) {
-      setIsExpanded(false);
-      onExpandedChange?.(false);
-      setActiveSection(null);
-    }
+    setIsExpanded(false);
+    onExpandedChange?.(false);
   };
+
+  const handleItemClick = (sectionId: string) => {
+    onSectionChange?.(sectionId);
+  };
+
+  const sidebarSections: SidebarSection[] = [
+    {
+      id: 'home',
+      title: '',
+      items: [
+        {
+          id: 'home',
+          icon: HomeIcon,
+          label: 'Home',
+          sectionId: 'home'
+        }
+      ]
+    },
+    {
+      id: 'bulkEdit',
+      title: 'Bulk Edit',
+      items: [
+        {
+          id: 'title',
+          icon: TextAlignCenterIcon,
+          label: 'Edit Title',
+          sectionId: 'title'
+        },
+        {
+          id: 'price',
+          icon: CashDollarIcon,
+          label: 'Edit Price',
+          sectionId: 'price'
+        }
+      ]
+    }
+  ];
 
   return (
     <>
@@ -151,17 +141,16 @@ export function Sidebar({ onExpandedChange }: SidebarProps) {
                 {section.items.map((item) => (
                   <div
                     key={item.id}
-                    onClick={item.onClick}
+                    onClick={() => handleItemClick(item.sectionId)}
                     style={{
                       padding: '8px 16px',
                       margin: '0 8px',
                       cursor: 'pointer',
                       borderRadius: '8px',
-                      backgroundColor: activeSection === item.id ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                      backgroundColor: activeSection === item.sectionId ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                       transition: 'background-color 0.2s ease',
                       position: 'relative'
                     }}
-                    onMouseEnter={() => setActiveSection(item.id)}
                   >
                     <div style={{ 
                       display: 'flex',
@@ -179,21 +168,14 @@ export function Sidebar({ onExpandedChange }: SidebarProps) {
                       </span>
                       
                       {isExpanded && (
-                        <>
-                          <span style={{ 
-                            color: 'white',
-                            marginLeft: '8px'
-                          }}>
-                            <Text variant="bodyMd" as="span">
-                              {item.label}
-                            </Text>
-                          </span>
-                          {item.badge && (
-                            <Badge tone="info">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </>
+                        <span style={{ 
+                          color: 'white',
+                          marginLeft: '8px'
+                        }}>
+                          <Text variant="bodyMd" as="span">
+                            {item.label}
+                          </Text>
+                        </span>
                       )}
                       
                       {!isExpanded && (
@@ -211,4 +193,4 @@ export function Sidebar({ onExpandedChange }: SidebarProps) {
       </div>
     </>
   );
-} 
+}
