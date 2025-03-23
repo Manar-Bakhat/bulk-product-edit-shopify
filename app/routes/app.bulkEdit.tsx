@@ -25,6 +25,7 @@ import {
 } from "@shopify/polaris";
 import { Sidebar } from "../components/Sidebar";
 import { EditTitle } from "../components/EditTitle";
+import { EditPrice } from "../components/EditPrice";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
@@ -395,54 +396,9 @@ export default function BulkEdit() {
     <EditTitle />
   );
 
-  const renderPriceContent = () => (
-    <BlockStack gap="400">
-      <LegacyCard>
-        <BlockStack gap="400">
-          <Box padding="400">
-            <BlockStack gap="400">
-              <Text variant="headingMd" as="h2">Bulk Edit Price</Text>
-              <Text variant="bodyMd" as="p" tone="subdued">
-                Modify prices for multiple products simultaneously. Apply percentage changes,
-                fixed amounts, or set specific prices.
-              </Text>
-              <TextField
-                label="Price Adjustment"
-                type="number"
-                prefix="$"
-                helpText="Enter a positive number to increase prices, negative to decrease"
-                autoComplete="off"
-              />
-              <Box>
-                <Button variant="primary">Calculate New Prices</Button>
-              </Box>
-            </BlockStack>
-          </Box>
-        </BlockStack>
-      </LegacyCard>
-
-      <LegacyCard>
-        <BlockStack gap="400">
-          <Box padding="400">
-            <BlockStack gap="400">
-              <Text variant="headingMd" as="h2">Products to Update</Text>
-              <DataTable
-                columnContentTypes={["text", "numeric", "numeric"]}
-                headings={["Product", "Current Price", "New Price"]}
-                rows={[]}
-              />
-              <EmptyState
-                heading="No products selected"
-                image=""
-              >
-                <p>Select products to update their prices</p>
-              </EmptyState>
-            </BlockStack>
-          </Box>
-        </BlockStack>
-      </LegacyCard>
-    </BlockStack>
-  );
+  const renderPriceContent = () => {
+    return <EditPrice />;
+  };
 
   const renderContent = () => {
     switch (activeSection) {
