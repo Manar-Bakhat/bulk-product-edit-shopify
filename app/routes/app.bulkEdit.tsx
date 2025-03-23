@@ -24,8 +24,12 @@ import {
   Toast
 } from "@shopify/polaris";
 import { Sidebar } from "../components/Sidebar";
+import { EditTitle } from "../components/EditTitle";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 
 interface Product {
   id: string;
@@ -44,6 +48,309 @@ interface Product {
       currencyCode: string;
     };
   };
+}
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { admin } = await authenticate.admin(request);
+
+  try {
+    const response = await admin.graphql(
+      `#graphql
+      query {
+        products(first: 50) {
+          edges {
+            node {
+              id
+              title
+              description
+              productType
+              vendor
+              status
+              featuredImage {
+                url
+                altText
+              }
+              priceRangeV2 {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
+            }
+          }
+        }
+      }`
+    );
+
+    const responseJson = await response.json();
+    return json({ initialProducts: responseJson.data.products });
+  } catch (error) {
+    console.error('Error loading initial products:', error);
+    return json({ initialProducts: { edges: [] } });
+  }
+};
+
+export async function action({ request }: ActionFunctionArgs) {
+  const { admin } = await authenticate.admin(request);
+  const formData = await request.formData();
+  const actionType = formData.get("actionType") as string;
+
+  if (actionType === "bulkEdit") {
+    const productIds = formData.get("productIds") as string;
+    const textToAdd = formData.get("textToAdd") as string;
+    const editType = formData.get("editType") as string;
+    const replacementText = formData.get("replacementText") as string;
+    const capitalizationType = formData.get("capitalizationType") as string;
+    const numberOfCharacters = parseInt(formData.get("numberOfCharacters") as string);
+    const productIdsArray = JSON.parse(productIds);
+    const productTitles = JSON.parse(formData.get("productTitles") as string);
+
+    try {
+      // Update each product's title
+      for (const productId of productIdsArray) {
+        const mutation = `#graphql
+          mutation productUpdate($input: ProductInput!) {
+            productUpdate(input: $input) {
+              product {
+                id
+                title
+              }
+              userErrors {
+                field
+                message
+              }
+            }
+          }
+        `;
+
+        const currentTitle = productTitles[productId] || '';
+        let newTitle = currentTitle;
+
+        switch (editType) {
+          case 'addTextBeginning':
+            newTitle = `${textToAdd} ${currentTitle}`;
+            break;
+          case 'addTextEnd':
+            newTitle = `${currentTitle} ${textToAdd}`;
+            break;
+          case 'removeText':
+            newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), '').trim();
+            break;
+          case 'replaceText':
+            newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), replacementText);
+            break;
+          case 'capitalize':
+            switch (capitalizationType) {
+              case 'titleCase':
+                newTitle = currentTitle
+                  .toLowerCase()
+                  .split(' ')
+                  .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+                break;
+              case 'uppercase':
+                newTitle = currentTitle.toUpperCase();
+                break;
+              case 'lowercase':
+                newTitle = currentTitle.toLowerCase();
+                break;
+              case 'firstLetter':
+                newTitle = currentTitle.charAt(0).toUpperCase() + currentTitle.slice(1).toLowerCase();
+                break;
+            }
+            break;
+          case 'truncate':
+            if (numberOfCharacters > 0) {
+              newTitle = currentTitle.slice(0, numberOfCharacters);
+            }
+            break;
+        }
+
+        const variables = {
+          input: {
+            id: `gid://shopify/Product/${productId}`,
+            title: newTitle
+          }
+        };
+
+        await admin.graphql(mutation, {
+          variables: variables
+        });
+      }
+
+      return json({ success: true });
+    } catch (error) {
+      console.error('Error updating products:', error);
+      return json({ error: 'Failed to update products' });
+    }
+  }
+
+  // Filter logic
+  const field = formData.get("field") as string;
+  const condition = formData.get("condition") as string;
+  const value = formData.get("value") as string;
+
+  try {
+    if (field === 'productId') {
+      // Direct product query for product ID searches
+      const response = await admin.graphql(
+        `#graphql
+        query {
+          product(id: "gid://shopify/Product/${value}") {
+            id
+            title
+            description
+            productType
+            vendor
+            status
+            featuredImage {
+              url
+              altText
+            }
+            priceRangeV2 {
+              minVariantPrice {
+                amount
+                currencyCode
+              }
+            }
+          }
+        }`
+      );
+
+      const responseJson = await response.json();
+
+      if (responseJson.data?.product) {
+        return json({
+          data: {
+            products: {
+              edges: [{
+                node: responseJson.data.product
+              }]
+            }
+          }
+        });
+      }
+      return json({ error: 'Product not found' });
+    }
+
+    // Regular search query for other fields
+    let queryString = '';
+    if (value) {
+      const fieldMap: { [key: string]: string } = {
+        title: 'title',
+        collection: 'collection',
+        productId: 'id',
+        description: 'description',
+        price: 'variants.price'
+      };
+
+      const searchField = fieldMap[field] || field;
+      const escapedValue = value.replace(/['"]/g, '').trim();
+
+      switch (condition) {
+        case 'is':
+          queryString = `${searchField}:'${escapedValue}'`;
+          break;
+        case 'contains':
+          queryString = `${searchField}:*${escapedValue}*`;
+          break;
+        case 'doesNotContain':
+          queryString = `-${searchField}:*${escapedValue}*`;
+          break;
+        case 'startsWith':
+        case 'endsWith':
+          queryString = `${searchField}:*${escapedValue}*`;
+          break;
+      }
+    }
+
+    const graphqlQuery = `#graphql
+      query {
+        products(first: 50, query: "${queryString}") {
+          edges {
+            node {
+              id
+              title
+              description
+              productType
+              vendor
+              status
+              featuredImage {
+                url
+                altText
+              }
+              priceRangeV2 {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await admin.graphql(graphqlQuery);
+    const responseJson = await response.json();
+
+    if (field === 'productId') {
+      // Handle single product response
+      if (responseJson.data?.product) {
+        const product = responseJson.data.product;
+        return json({
+          data: {
+            products: {
+              edges: [{
+                node: product
+              }]
+            }
+          }
+        });
+      }
+    } else if (responseJson.data?.products?.edges) {
+      // Handle product list response
+      const allProducts = responseJson.data.products.edges;
+      const searchValue = value.toLowerCase().trim();
+      
+      // Filter the products based on condition
+      const filteredProducts = {
+        edges: allProducts.filter(({ node }: { node: any }) => {
+          const fieldValue = field === 'description' 
+            ? (node.description || '').toLowerCase() 
+            : node.title.toLowerCase();
+          
+          switch (condition) {
+            case 'is':
+              return fieldValue === searchValue;
+            case 'contains':
+              return fieldValue.includes(searchValue);
+            case 'doesNotContain':
+              return !fieldValue.includes(searchValue);
+            case 'startsWith':
+              return fieldValue.startsWith(searchValue);
+            case 'endsWith':
+              return fieldValue.endsWith(searchValue);
+            case 'empty':
+              return !node.description || node.description.trim() === '';
+            default:
+              return true;
+          }
+        })
+      };
+      
+      return json({
+        data: {
+          products: filteredProducts
+        }
+      });
+    }
+
+    return json({ error: 'No products data received' });
+  } catch (error) {
+    console.error('Error fetching filtered products:', error);
+    return json({ error: 'Failed to fetch products', details: error });
+  }
 }
 
 export default function BulkEdit() {
@@ -85,235 +392,7 @@ export default function BulkEdit() {
   };
 
   const renderTitleContent = () => (
-    <BlockStack gap="500">
-      {/* Progress Indicator */}
-      <BlockStack gap="200">
-        <InlineStack align="space-between" blockAlign="center">
-          <Badge tone="success">Step 1 of 2</Badge>
-          <ProgressBar progress={50} tone="success" />
-        </InlineStack>
-      </BlockStack>
-
-      {/* Filter Section */}
-      <Card>
-        <BlockStack gap="400">
-          <InlineStack align="space-between" blockAlign="center">
-            <InlineStack gap="300" blockAlign="center">
-              <Icon source={FilterIcon} tone="success" />
-              <Text variant="headingSm" as="h2">Filter Products</Text>
-            </InlineStack>
-            <Button
-              icon={ResetIcon}
-              onClick={() => {}}
-              disabled={!hasSearched}
-              tone="success"
-            >
-              Clear filters
-            </Button>
-          </InlineStack>
-          <Divider />
-          
-          <BlockStack gap="400">
-            <InlineStack gap="300" align="start" blockAlign="center">
-              <Select
-                label=""
-                options={[
-                  { label: 'Title', value: 'title' },
-                  { label: 'Description', value: 'description' },
-                  { label: 'Product ID', value: 'productId' }
-                ]}
-                value={selectedField}
-                onChange={setSelectedField}
-              />
-              <Select
-                label=""
-                options={[
-                  { label: 'is', value: 'is' },
-                  { label: 'contains', value: 'contains' },
-                  { label: 'does not contain', value: 'doesNotContain' },
-                  { label: 'starts with', value: 'startsWith' },
-                  { label: 'ends with', value: 'endsWith' }
-                ]}
-                value={selectedCondition}
-                onChange={setSelectedCondition}
-              />
-              <div style={{ minWidth: '200px' }}>
-                <TextField
-                  label=""
-                  value={filterValue}
-                  onChange={setFilterValue}
-                  autoComplete="off"
-                  placeholder="Enter search text..."
-                />
-              </div>
-            </InlineStack>
-
-            <InlineStack gap="300">
-              <Button variant="primary" onClick={() => {}} loading={isLoading} tone="success">
-                Preview matching products
-              </Button>
-            </InlineStack>
-
-            {hasSearched && (
-              <div style={{ position: 'relative' }}>
-                {isLoading && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'var(--p-color-bg-surface)',
-                    opacity: 0.8,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    zIndex: 1
-                  }}>
-                    <Spinner size="large" />
-                  </div>
-                )}
-                
-                {products.length > 0 ? (
-                  <BlockStack gap="400">
-                    <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Product Type', 'Status', 'Price']}
-                      rows={[]}
-                      hoverable
-                      defaultSortDirection="descending"
-                      initialSortColumnIndex={0}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-                      <Pagination
-                        label={`Page ${currentPage} of ${Math.ceil(products.length / itemsPerPage)}`}
-                        hasPrevious={currentPage > 1}
-                        onPrevious={() => setCurrentPage(currentPage - 1)}
-                        hasNext={currentPage < Math.ceil(products.length / itemsPerPage)}
-                        onNext={() => setCurrentPage(currentPage + 1)}
-                      />
-                    </div>
-                  </BlockStack>
-                ) : !isLoading && (
-                  <Banner tone="success">
-                    No products found matching your criteria
-                  </Banner>
-                )}
-              </div>
-            )}
-          </BlockStack>
-        </BlockStack>
-      </Card>
-
-      {/* Progress Indicator for Step 2 */}
-      <BlockStack gap="200">
-        <InlineStack align="space-between" blockAlign="center">
-          <Badge tone="success">Step 2 of 2</Badge>
-          <ProgressBar progress={100} tone="success" />
-        </InlineStack>
-      </BlockStack>
-
-      {/* Edit Section */}
-      <Card>
-        <BlockStack gap="400">
-          <InlineStack align="space-between" blockAlign="center">
-            <InlineStack gap="300" blockAlign="center">
-              <Icon source={EditIcon} tone="success" />
-              <Text variant="headingSm" as="h2">Edit Products</Text>
-            </InlineStack>
-          </InlineStack>
-          <Divider />
-
-          <BlockStack gap="400">
-            <Select
-              label=""
-              options={[
-                { label: 'Add text at the beginning of title', value: 'addTextBeginning' },
-                { label: 'Add text to the end of title', value: 'addTextEnd' },
-                { label: 'Find and remove text from title', value: 'removeText' },
-                { label: 'Find and replace text in title', value: 'replaceText' },
-                { label: 'Change title capitalization', value: 'capitalize' },
-                { label: 'Keep the first X number of characters', value: 'truncate' }
-              ]}
-              value={selectedEditOption}
-              onChange={setSelectedEditOption}
-              placeholder="Select an option"
-            />
-            
-            {(selectedEditOption === 'addTextBeginning' || selectedEditOption === 'addTextEnd' || selectedEditOption === 'removeText' || selectedEditOption === 'replaceText' || selectedEditOption === 'capitalize' || selectedEditOption === 'truncate') && (
-              <BlockStack gap="400">
-                <Text variant="headingSm" as="h3">
-                  {selectedEditOption === 'removeText' ? 'Remove' : 
-                   selectedEditOption === 'replaceText' ? 'Replace' : 
-                   selectedEditOption === 'capitalize' ? 'Capitalize' : 
-                   selectedEditOption === 'truncate' ? 'Truncate' : 'Add'}
-                </Text>
-                <div style={{ maxWidth: '400px' }}>
-                  {selectedEditOption === 'replaceText' ? (
-                    <BlockStack gap="400">
-                      <TextField
-                        label="Find"
-                        value={textToReplace}
-                        onChange={setTextToReplace}
-                        placeholder="Enter text to find"
-                        autoComplete="off"
-                      />
-                      <TextField
-                        label="Replace with"
-                        value={replacementText}
-                        onChange={setReplacementText}
-                        placeholder="Enter replacement text"
-                        autoComplete="off"
-                      />
-                    </BlockStack>
-                  ) : selectedEditOption === 'capitalize' ? (
-                    <BlockStack gap="400">
-                      <Select
-                        label="Capitalization type"
-                        options={[
-                          { label: 'First Letter Of Each Word Is Uppercase', value: 'titleCase' },
-                          { label: 'UPPERCASE', value: 'uppercase' },
-                          { label: 'lowercase', value: 'lowercase' },
-                          { label: 'First letter of title uppercase', value: 'firstLetter' }
-                        ]}
-                        value={capitalizationType}
-                        onChange={setCapitalizationType}
-                      />
-                    </BlockStack>
-                  ) : selectedEditOption === 'truncate' ? (
-                    <BlockStack gap="400">
-                      <TextField
-                        label="Number of characters"
-                        type="number"
-                        value={numberOfCharacters}
-                        onChange={setNumberOfCharacters}
-                        placeholder="Enter number of characters to keep"
-                        autoComplete="off"
-                      />
-                    </BlockStack>
-                  ) : (
-                    <TextField
-                      label=""
-                      value={textToAdd}
-                      onChange={setTextToAdd}
-                      placeholder={
-                        selectedEditOption === 'removeText'
-                          ? 'Enter text to remove from titles'
-                          : `Enter text to add ${selectedEditOption === 'addTextBeginning' ? 'at the beginning' : 'to the end'} of titles`
-                      }
-                      autoComplete="off"
-                    />
-                  )}
-                </div>
-                <Button variant="primary" onClick={() => {}} tone="success">
-                  Start bulk edit now
-                </Button>
-              </BlockStack>
-            )}
-          </BlockStack>
-        </BlockStack>
-      </Card>
-    </BlockStack>
+    <EditTitle />
   );
 
   const renderPriceContent = () => (
