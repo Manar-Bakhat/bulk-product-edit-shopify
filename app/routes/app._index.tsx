@@ -254,35 +254,35 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Regular search query for other fields
-    let queryString = '';
-    if (value) {
-      const fieldMap: { [key: string]: string } = {
-        title: 'title',
-        collection: 'collection',
+  let queryString = '';
+  if (value) {
+    const fieldMap: { [key: string]: string } = {
+      title: 'title',
+      collection: 'collection',
         productId: 'id',
-        description: 'description',
-        price: 'variants.price'
-      };
+      description: 'description',
+      price: 'variants.price'
+    };
 
-      const searchField = fieldMap[field] || field;
+    const searchField = fieldMap[field] || field;
       const escapedValue = value.replace(/['"]/g, '').trim();
 
-      switch (condition) {
-        case 'is':
+    switch (condition) {
+      case 'is':
           queryString = `${searchField}:'${escapedValue}'`;
-          break;
-        case 'contains':
-          queryString = `${searchField}:*${escapedValue}*`;
-          break;
-        case 'doesNotContain':
-          queryString = `-${searchField}:*${escapedValue}*`;
-          break;
-        case 'startsWith':
-        case 'endsWith':
-          queryString = `${searchField}:*${escapedValue}*`;
-          break;
-      }
+        break;
+      case 'contains':
+        queryString = `${searchField}:*${escapedValue}*`;
+        break;
+      case 'doesNotContain':
+        queryString = `-${searchField}:*${escapedValue}*`;
+        break;
+      case 'startsWith':
+      case 'endsWith':
+        queryString = `${searchField}:*${escapedValue}*`;
+        break;
     }
+  }
 
     const graphqlQuery = `#graphql
       query {
@@ -316,7 +316,7 @@ export async function action({ request }: ActionFunctionArgs) {
     console.log('Full GraphQL query:', graphqlQuery);
 
     const response = await admin.graphql(graphqlQuery);
-    const responseJson = await response.json();
+  const responseJson = await response.json();
     console.log('Raw API response:', responseJson);
 
     if (field === 'productId') {
@@ -400,19 +400,19 @@ export default function Index() {
 
   const renderHomeContent = () => (
     <BlockStack gap="400">
-      <Card>
-        <BlockStack gap="400">
+          <Card>
+            <BlockStack gap="400">
           <Box padding="400">
             <BlockStack gap="400">
               <Text variant="headingMd" as="h2">Welcome to {shop?.name || 'Your Store'}</Text>
               <Text variant="bodyMd" as="p" tone="subdued">
                 Select an option from the sidebar to start editing your products.
-              </Text>
-            </BlockStack>
+                      </Text>
+                        </BlockStack>
           </Box>
-        </BlockStack>
-      </Card>
-    </BlockStack>
+                </BlockStack>
+              </Card>
+      </BlockStack>
   );
 
   return (
@@ -435,7 +435,7 @@ export default function Index() {
               {renderHomeContent()}
             </Layout.Section>
           </Layout>
-        </Page>
+    </Page>
       </div>
     </Frame>
   );

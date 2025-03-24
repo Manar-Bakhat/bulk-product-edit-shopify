@@ -281,16 +281,37 @@ export function EditTitle() {
    * Submits edit criteria to the server
    */
   const handleBulkEdit = () => {
+    // Validate inputs based on edit type
     if (selectedEditOption === 'replaceText') {
       if (!textToReplace.trim() || !replacementText.trim()) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Please enter both text to find and replacement text',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
         return;
       }
     } else if (selectedEditOption === 'truncate') {
       const num = parseInt(numberOfCharacters);
       if (isNaN(num) || num <= 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Please enter a valid number of characters',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
         return;
       }
+    } else if (selectedEditOption === 'capitalize') {
+      // No validation needed for capitalization
     } else if (!textToAdd.trim()) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Please enter text to add',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
       return;
     }
 
@@ -318,18 +339,20 @@ export function EditTitle() {
    */
   useEffect(() => {
     if (actionData?.success) {
+      // Reset form fields
+      setSelectedEditOption('');
+      setTextToAdd('');
+      setTextToReplace('');
+      setReplacementText('');
+      setCapitalizationType('titleCase');
+      setNumberOfCharacters('');
+
+      // Show success message
       Swal.fire({
         title: 'Success!',
         text: 'Products updated successfully!',
         icon: 'success',
         confirmButtonText: 'OK'
-      }).then(() => {
-        setSelectedEditOption('');
-        setTextToAdd('');
-        setTextToReplace('');
-        setReplacementText('');
-        setCapitalizationType('titleCase');
-        setNumberOfCharacters('');
       });
     }
   }, [actionData]);
