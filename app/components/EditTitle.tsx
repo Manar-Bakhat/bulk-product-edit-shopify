@@ -29,7 +29,7 @@ import {
   Divider
 } from "@shopify/polaris";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
-import { useSubmit, useActionData, useLoaderData } from "@remix-run/react";
+import { useSubmit, useActionData, useLoaderData, useSearchParams } from "@remix-run/react";
 import Swal from 'sweetalert2';
 
 /**
@@ -76,6 +76,9 @@ interface ActionData {
  * Main component for bulk title editing functionality
  */
 export function EditTitle() {
+  const [searchParams] = useSearchParams();
+  const currentSection = searchParams.get("section");
+
   // State for filtering
   const [selectedField, setSelectedField] = useState('title');
   const [selectedCondition, setSelectedCondition] = useState('contains');
@@ -101,6 +104,22 @@ export function EditTitle() {
   // Remix hooks for form submission and data handling
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
+
+  // Reset all states on mount
+  useEffect(() => {
+    setSelectedField('title');
+    setSelectedCondition('contains');
+    setFilterValue('');
+    setHasSearched(false);
+    setProducts([]);
+    setSelectedEditOption('');
+    setTextToAdd('');
+    setTextToReplace('');
+    setReplacementText('');
+    setCapitalizationType('titleCase');
+    setNumberOfCharacters('');
+    setCurrentPage(1);
+  }, []); // Empty dependency array means this runs once on mount
 
   /**
    * Effect to handle filtered products from the server
@@ -273,6 +292,8 @@ export function EditTitle() {
     formData.append("field", selectedField);
     formData.append("condition", selectedCondition);
     formData.append("value", filterValue);
+    formData.append("section", "title");
+    formData.append("currentSection", currentSection || "title");
     submit(formData, { method: "post" });
   };
 

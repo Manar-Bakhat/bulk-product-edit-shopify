@@ -105,6 +105,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { admin } = await authenticate.admin(request);
   const formData = await request.formData();
   const actionType = formData.get("actionType") as string;
+  const section = formData.get("section") as string;
 
   if (actionType === "bulkEdit") {
     const productIds = formData.get("productIds") as string;
@@ -202,6 +203,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const value = formData.get("value") as string;
 
   try {
+    // Reset previous search results if section changed
+    if (section !== formData.get("currentSection")) {
+      return json({
+        data: {
+          products: {
+            edges: []
+          }
+        }
+      });
+    }
+
     if (field === 'productId') {
       // Direct product query for product ID searches
       const response = await admin.graphql(
@@ -370,20 +382,6 @@ export default function BulkEdit() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const section = searchParams.get("section") || "title";
-  const [selectedField, setSelectedField] = useState('title');
-  const [selectedCondition, setSelectedCondition] = useState('contains');
-  const [filterValue, setFilterValue] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [selectedEditOption, setSelectedEditOption] = useState('');
-  const [textToAdd, setTextToAdd] = useState('');
-  const [textToReplace, setTextToReplace] = useState('');
-  const [replacementText, setReplacementText] = useState('');
-  const [capitalizationType, setCapitalizationType] = useState('titleCase');
-  const [numberOfCharacters, setNumberOfCharacters] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
 
   useEffect(() => {
     setActiveSection(section);
@@ -403,11 +401,11 @@ export default function BulkEdit() {
   };
 
   const renderTitleContent = () => (
-    <EditTitle />
+    <EditTitle key={section} />
   );
 
   const renderPriceContent = () => {
-    return <EditPrice />;
+    return <EditPrice key={section} />;
   };
 
   const renderContent = () => {
