@@ -143,6 +143,7 @@ export function EditPrice() {
       <div>
         <Text variant="bodyMd" as="p" fontWeight="bold">{product.title}</Text>
         <Text variant="bodySm" as="p" tone="subdued">{product.vendor}</Text>
+        {/* 
         <InlineStack gap="200" blockAlign="center">
           <Button
             size="slim"
@@ -159,6 +160,7 @@ export function EditPrice() {
             Go to Online Store
           </Button>
         </InlineStack>
+        */}
       </div>
     </div>,
     <div style={{ 
