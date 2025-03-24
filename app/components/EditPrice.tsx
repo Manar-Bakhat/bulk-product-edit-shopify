@@ -27,8 +27,9 @@ import {
   Pagination,
   Divider
 } from "@shopify/polaris";
-import { FilterIcon, ResetIcon } from '@shopify/polaris-icons';
+import { FilterIcon, ResetIcon, EditIcon } from '@shopify/polaris-icons';
 import { useSubmit, useActionData, useLoaderData, useSearchParams } from "@remix-run/react";
+import Swal from 'sweetalert2';
 
 /**
  * Product interface defining the structure of product data
@@ -66,6 +67,7 @@ interface ActionData {
     };
   };
   error?: string;
+  success?: boolean;
 }
 
 /**
@@ -90,6 +92,10 @@ export function EditPrice() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
 
+  // State for price editing
+  const [selectedEditOption, setSelectedEditOption] = useState('');
+  const [newPrice, setNewPrice] = useState('');
+  
   // Remix hooks for form submission and data handling
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
@@ -240,6 +246,11 @@ export function EditPrice() {
     { label: 'empty', value: 'empty' }
   ];
 
+  // Price editing options
+  const editOptions = [
+    { label: 'Set price to', value: 'setPrice' }
+  ];
+
   /**
    * Handles field selection changes
    * Updates condition options based on selected field
@@ -281,6 +292,58 @@ export function EditPrice() {
     setHasSearched(false);
     setProducts([]);
   };
+
+  /**
+   * Handles bulk price editing
+   * Submits edit criteria to the server
+   */
+  const handleBulkEdit = () => {
+    // Validate price input
+    const price = parseFloat(newPrice);
+    if (isNaN(price) || price < 0) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Please enter a valid price',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+
+    const productIds = products.map(product => product.id);
+    const productPrices = products.reduce((acc, product) => {
+      acc[product.id] = product.priceRangeV2.minVariantPrice.amount;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const formData = new FormData();
+    formData.append("actionType", "bulkEdit");
+    formData.append("productIds", JSON.stringify(productIds));
+    formData.append("productPrices", JSON.stringify(productPrices));
+    formData.append("newPrice", newPrice);
+    formData.append("editType", selectedEditOption);
+    submit(formData, { method: "post" });
+  };
+
+  /**
+   * Effect to handle successful bulk edit
+   * Shows success message and resets form
+   */
+  useEffect(() => {
+    if (actionData?.success) {
+      // Reset form fields
+      setSelectedEditOption('');
+      setNewPrice('');
+
+      // Show success message
+      Swal.fire({
+        title: 'Success!',
+        text: 'Product prices updated successfully!',
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+    }
+  }, [actionData]);
 
   return (
     <BlockStack gap="500">
@@ -396,6 +459,49 @@ export function EditPrice() {
                   </Banner>
                 )}
               </div>
+            )}
+          </BlockStack>
+        </BlockStack>
+      </Card>
+
+      {/* Edit Section */}
+      <Card>
+        <BlockStack gap="400">
+          <InlineStack align="space-between" blockAlign="center">
+            <InlineStack gap="300" blockAlign="center">
+              <Icon source={EditIcon} tone="success" />
+              <Text variant="headingSm" as="h2">Edit Prices</Text>
+            </InlineStack>
+          </InlineStack>
+          <Divider />
+
+          <BlockStack gap="400">
+            <Select
+              label=""
+              options={editOptions}
+              value={selectedEditOption}
+              onChange={setSelectedEditOption}
+              placeholder="Select an option"
+            />
+            
+            {selectedEditOption === 'setPrice' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Set Price To</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={newPrice}
+                    onChange={setNewPrice}
+                    placeholder="Enter new price"
+                    autoComplete="off"
+                    prefix="$"
+                  />
+                </div>
+                <Button variant="primary" onClick={handleBulkEdit} tone="success">
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
             )}
           </BlockStack>
         </BlockStack>

@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a7db49394bfec100b10f31a12f89f98d"
-application_url = "https://dog-adjusted-girls-chen.trycloudflare.com"
+application_url = "https://ko-qty-painful-lewis.trycloudflare.com"
 embedded = true
 name = "bulk-product-edit"
 handle = "bulk-product-edit-6"
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://dog-adjusted-girls-chen.trycloudflare.com/auth/callback",
-  "https://dog-adjusted-girls-chen.trycloudflare.com/auth/shopify/callback",
-  "https://dog-adjusted-girls-chen.trycloudflare.com/api/auth/callback"
+  "https://ko-qty-painful-lewis.trycloudflare.com/auth/callback",
+  "https://ko-qty-painful-lewis.trycloudflare.com/auth/shopify/callback",
+  "https://ko-qty-painful-lewis.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
