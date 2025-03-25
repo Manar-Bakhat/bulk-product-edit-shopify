@@ -248,7 +248,8 @@ export function EditPrice() {
 
   // Price editing options
   const editOptions = [
-    { label: 'Set price to', value: 'setPrice' }
+    { label: 'Set price to', value: 'setPrice' },
+    { label: 'Set compare-at price to', value: 'setCompareAtPrice' }
   ];
 
   /**
@@ -530,6 +531,26 @@ export function EditPrice() {
                     value={newPrice}
                     onChange={setNewPrice}
                     placeholder="Enter new price"
+                    autoComplete="off"
+                    prefix="$"
+                  />
+                </div>
+                <Button variant="primary" onClick={handleBulkEdit} tone="success">
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'setCompareAtPrice' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Set Compare-at Price To</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={newPrice}
+                    onChange={setNewPrice}
+                    placeholder="Enter new compare-at price"
                     autoComplete="off"
                     prefix="$"
                   />

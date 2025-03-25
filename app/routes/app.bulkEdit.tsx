@@ -218,6 +218,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 productVariants {
                   id
                   price
+                  compareAtPrice
                 }
                 userErrors {
                   field
@@ -231,7 +232,7 @@ export async function action({ request }: ActionFunctionArgs) {
             productId: `gid://shopify/Product/${productId}`,
             variants: [{
               id: variantId,
-              price: newPrice
+              ...(editType === 'setCompareAtPrice' ? { compareAtPrice: newPrice } : { price: newPrice })
             }]
           };
 
