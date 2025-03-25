@@ -298,9 +298,12 @@ export function EditPrice() {
    * Submits edit criteria to the server
    */
   const handleBulkEdit = () => {
+    console.log('[EditPrice] Starting bulk edit process');
+    
     // Validate price input
     const price = parseFloat(newPrice);
     if (isNaN(price) || price < 0) {
+      console.log('[EditPrice] Invalid price input:', newPrice);
       Swal.fire({
         title: 'Error',
         text: 'Please enter a valid price',
@@ -316,12 +319,32 @@ export function EditPrice() {
       return acc;
     }, {} as Record<string, string>);
 
+    console.log('[EditPrice] Preparing form data:', {
+      productIds,
+      productPrices,
+      newPrice,
+      selectedEditOption
+    });
+
     const formData = new FormData();
     formData.append("actionType", "bulkEdit");
+    formData.append("section", "price");
     formData.append("productIds", JSON.stringify(productIds));
     formData.append("productPrices", JSON.stringify(productPrices));
     formData.append("newPrice", newPrice);
     formData.append("editType", selectedEditOption);
+
+    // Log the actual form data being sent
+    console.log('[EditPrice] Form data being sent:', {
+      actionType: formData.get("actionType"),
+      section: formData.get("section"),
+      productIds: formData.get("productIds"),
+      productPrices: formData.get("productPrices"),
+      newPrice: formData.get("newPrice"),
+      editType: formData.get("editType")
+    });
+
+    console.log('[EditPrice] Submitting form data...');
     submit(formData, { method: "post" });
   };
 
@@ -330,18 +353,31 @@ export function EditPrice() {
    * Shows success message and resets form
    */
   useEffect(() => {
-    if (actionData?.success) {
-      // Reset form fields
-      setSelectedEditOption('');
-      setNewPrice('');
+    if (actionData) {
+      console.log('[EditPrice] Received action data:', actionData);
+      
+      if (actionData.success) {
+        console.log('[EditPrice] Bulk edit successful!');
+        // Reset form fields
+        setSelectedEditOption('');
+        setNewPrice('');
 
-      // Show success message
-      Swal.fire({
-        title: 'Success!',
-        text: 'Product prices updated successfully!',
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
+        // Show success message
+        Swal.fire({
+          title: 'Success!',
+          text: 'Product prices updated successfully!',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+      } else if (actionData.error) {
+        console.error('[EditPrice] Bulk edit failed:', actionData.error);
+        Swal.fire({
+          title: 'Error',
+          text: actionData.error,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
     }
   }, [actionData]);
 

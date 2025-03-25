@@ -61,6 +61,57 @@ interface Product {
   };
 }
 
+interface GraphQLResponse {
+  data?: {
+    product?: {
+      id: string;
+      variants?: {
+        edges: Array<{
+          node: {
+            id: string;
+            price: string;
+          };
+        }>;
+      };
+    };
+    productUpdate?: {
+      product: {
+        id: string;
+        variants: {
+          edges: Array<{
+            node: {
+              id: string;
+              price: string;
+            };
+          }>;
+        };
+      };
+      userErrors: Array<{
+        field: string;
+        message: string;
+      }>;
+    };
+    productVariantsBulkUpdate?: {
+      variants: Array<{
+        id: string;
+        price: string;
+      }>;
+      userErrors: Array<{
+        field: string;
+        message: string;
+      }>;
+    };
+  };
+  errors?: Array<{
+    message: string;
+    locations: Array<{
+      line: number;
+      column: number;
+    }>;
+    path: string[];
+  }>;
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
 
@@ -109,91 +160,199 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (actionType === "bulkEdit") {
     const productIds = formData.get("productIds") as string;
-    const textToAdd = formData.get("textToAdd") as string;
-    const editType = formData.get("editType") as string;
-    const replacementText = formData.get("replacementText") as string;
-    const capitalizationType = formData.get("capitalizationType") as string;
-    const numberOfCharacters = parseInt(formData.get("numberOfCharacters") as string);
+    const section = formData.get("section") as string;
     const productIdsArray = JSON.parse(productIds);
-    const productTitles = JSON.parse(formData.get("productTitles") as string);
 
-    try {
-      // Update each product's title
-      for (const productId of productIdsArray) {
-        const mutation = `#graphql
-          mutation productUpdate($input: ProductInput!) {
-            productUpdate(input: $input) {
-              product {
+    if (section === "price") {
+      const newPrice = formData.get("newPrice") as string;
+      const editType = formData.get("editType") as string;
+
+      try {
+        console.log('[Price Update] Starting price update process');
+        console.log('[Price Update] New price:', newPrice);
+        console.log('[Price Update] Product IDs:', productIdsArray);
+
+        // Update each product's price
+        for (const productId of productIdsArray) {
+          console.log(`[Price Update] Processing product ID: ${productId}`);
+          
+          // First, get the product's variants
+          const getProductQuery = `#graphql
+            query {
+              product(id: "gid://shopify/Product/${productId}") {
                 id
-                title
-              }
-              userErrors {
-                field
-                message
+                variants(first: 1) {
+                  edges {
+                    node {
+                      id
+                      price
+                    }
+                  }
+                }
               }
             }
+          `;
+
+          console.log('[Price Update] Fetching product variants...');
+          const productResponse = await admin.graphql(getProductQuery);
+          const productData = (await productResponse.json()) as unknown as GraphQLResponse;
+          
+          console.log('[Price Update] Product data received:', productData);
+          
+          if (productData.errors) {
+            console.error('[Price Update] GraphQL errors:', productData.errors);
+            throw new Error(`GraphQL errors: ${JSON.stringify(productData.errors)}`);
           }
-        `;
 
-        const currentTitle = productTitles[productId] || '';
-        let newTitle = currentTitle;
+          if (!productData.data?.product?.variants?.edges?.length) {
+            console.error('[Price Update] No variants found for product:', productId);
+            throw new Error(`No variants found for product: ${productId}`);
+          }
 
-        switch (editType) {
-          case 'addTextBeginning':
-            newTitle = `${textToAdd} ${currentTitle}`;
-            break;
-          case 'addTextEnd':
-            newTitle = `${currentTitle} ${textToAdd}`;
-            break;
-          case 'removeText':
-            newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), '').trim();
-            break;
-          case 'replaceText':
-            newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), replacementText);
-            break;
-          case 'capitalize':
-            switch (capitalizationType) {
-              case 'titleCase':
-                newTitle = currentTitle
-                  .toLowerCase()
-                  .split(' ')
-                  .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ');
-                break;
-              case 'uppercase':
-                newTitle = currentTitle.toUpperCase();
-                break;
-              case 'lowercase':
-                newTitle = currentTitle.toLowerCase();
-                break;
-              case 'firstLetter':
-                newTitle = currentTitle.charAt(0).toUpperCase() + currentTitle.slice(1).toLowerCase();
-                break;
+          const variantId = productData.data.product.variants.edges[0].node.id;
+          console.log('[Price Update] Found variant ID:', variantId);
+
+          const mutation = `#graphql
+            mutation productVariantsBulkUpdate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+              productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+                productVariants {
+                  id
+                  price
+                }
+                userErrors {
+                  field
+                  message
+                }
+              }
             }
-            break;
-          case 'truncate':
-            if (numberOfCharacters > 0) {
-              newTitle = currentTitle.slice(0, numberOfCharacters);
-            }
-            break;
+          `;
+
+          const variables = {
+            productId: `gid://shopify/Product/${productId}`,
+            variants: [{
+              id: variantId,
+              price: newPrice
+            }]
+          };
+
+          console.log('[Price Update] Updating price with variables:', variables);
+          const updateResponse = await admin.graphql(mutation, {
+            variables: variables
+          });
+          
+          const updateData = (await updateResponse.json()) as unknown as GraphQLResponse;
+          console.log('[Price Update] Update response:', updateData);
+          
+          if (updateData.errors) {
+            console.error('[Price Update] Update mutation errors:', updateData.errors);
+            throw new Error(`Update mutation errors: ${JSON.stringify(updateData.errors)}`);
+          }
+
+          const userErrors = updateData.data?.productVariantsBulkUpdate?.userErrors;
+          if (userErrors && userErrors.length > 0) {
+            console.error('[Price Update] User errors:', userErrors);
+            throw new Error(`User errors: ${JSON.stringify(userErrors)}`);
+          }
+
+          console.log('[Price Update] Successfully updated price for product:', productId);
         }
 
-        const variables = {
-          input: {
-            id: `gid://shopify/Product/${productId}`,
-            title: newTitle
-          }
-        };
-
-        await admin.graphql(mutation, {
-          variables: variables
+        console.log('[Price Update] All products updated successfully');
+        return json({ success: true });
+      } catch (error) {
+        console.error('[Price Update] Detailed error:', error);
+        return json({ 
+          error: 'Failed to update products',
+          details: error instanceof Error ? error.message : 'Unknown error'
         });
       }
+    } else {
+      // Existing title edit logic
+      const textToAdd = formData.get("textToAdd") as string;
+      const editType = formData.get("editType") as string;
+      const replacementText = formData.get("replacementText") as string;
+      const capitalizationType = formData.get("capitalizationType") as string;
+      const numberOfCharacters = parseInt(formData.get("numberOfCharacters") as string);
+      const productTitles = JSON.parse(formData.get("productTitles") as string);
 
-      return json({ success: true });
-    } catch (error) {
-      console.error('Error updating products:', error);
-      return json({ error: 'Failed to update products' });
+      try {
+        // Update each product's title
+        for (const productId of productIdsArray) {
+          const mutation = `#graphql
+            mutation productUpdate($input: ProductInput!) {
+              productUpdate(input: $input) {
+                product {
+                  id
+                  title
+                }
+                userErrors {
+                  field
+                  message
+                }
+              }
+            }
+          `;
+
+          const currentTitle = productTitles[productId] || '';
+          let newTitle = currentTitle;
+
+          switch (editType) {
+            case 'addTextBeginning':
+              newTitle = `${textToAdd} ${currentTitle}`;
+              break;
+            case 'addTextEnd':
+              newTitle = `${currentTitle} ${textToAdd}`;
+              break;
+            case 'removeText':
+              newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), '').trim();
+              break;
+            case 'replaceText':
+              newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), replacementText);
+              break;
+            case 'capitalize':
+              switch (capitalizationType) {
+                case 'titleCase':
+                  newTitle = currentTitle
+                    .toLowerCase()
+                    .split(' ')
+                    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                  break;
+                case 'uppercase':
+                  newTitle = currentTitle.toUpperCase();
+                  break;
+                case 'lowercase':
+                  newTitle = currentTitle.toLowerCase();
+                  break;
+                case 'firstLetter':
+                  newTitle = currentTitle.charAt(0).toUpperCase() + currentTitle.slice(1).toLowerCase();
+                  break;
+              }
+              break;
+            case 'truncate':
+              if (numberOfCharacters > 0) {
+                newTitle = currentTitle.slice(0, numberOfCharacters);
+              }
+              break;
+          }
+
+          const variables = {
+            input: {
+              id: `gid://shopify/Product/${productId}`,
+              title: newTitle
+            }
+          };
+
+          await admin.graphql(mutation, {
+            variables: variables
+          });
+        }
+
+        return json({ success: true });
+      } catch (error) {
+        console.error('Error updating products:', error);
+        return json({ error: 'Failed to update products' });
+      }
     }
   }
 
