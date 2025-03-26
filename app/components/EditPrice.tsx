@@ -501,6 +501,14 @@ export function EditPrice() {
         </BlockStack>
       </Card>
 
+       {/* Progress Indicator for Step 2 */}
+      <BlockStack gap="200">
+        <InlineStack align="space-between" blockAlign="center">
+          <Badge tone="success">Step 2 of 2</Badge>
+          <ProgressBar progress={100} tone="success" />
+        </InlineStack>
+      </BlockStack>
+
       {/* Edit Section */}
       <Card>
         <BlockStack gap="400">

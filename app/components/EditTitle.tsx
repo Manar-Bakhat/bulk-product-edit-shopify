@@ -302,6 +302,17 @@ export function EditTitle() {
    * Submits edit criteria to the server
    */
   const handleBulkEdit = () => {
+    // Check if products have been filtered first
+    if (!hasSearched || products.length === 0) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Please filter and preview products first before starting bulk edit',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+
     // Validate inputs based on edit type
     if (selectedEditOption === 'replaceText') {
       if (!textToReplace.trim() || !replacementText.trim()) {
@@ -359,22 +370,33 @@ export function EditTitle() {
    * Shows success message and resets form
    */
   useEffect(() => {
-    if (actionData?.success) {
-      // Reset form fields
-      setSelectedEditOption('');
-      setTextToAdd('');
-      setTextToReplace('');
-      setReplacementText('');
-      setCapitalizationType('titleCase');
-      setNumberOfCharacters('');
+    if (actionData) {
+      console.log('[EditTitle] Received action data:', actionData);
+      
+      if (actionData.success) {
+        console.log('[EditTitle] Bulk edit successful!');
+        // Reset form fields
+        setSelectedEditOption('');
+        setTextToAdd('');
+        setReplacementText('');
+        setNumberOfCharacters('');
 
-      // Show success message
-      Swal.fire({
-        title: 'Success!',
-        text: 'Products updated successfully!',
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
+        // Show success message
+        Swal.fire({
+          title: 'Success!',
+          text: 'Product titles updated successfully!',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+      } else if (actionData.error) {
+        console.error('[EditTitle] Bulk edit failed:', actionData.error);
+        Swal.fire({
+          title: 'Error',
+          text: actionData.error,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
     }
   }, [actionData]);
 

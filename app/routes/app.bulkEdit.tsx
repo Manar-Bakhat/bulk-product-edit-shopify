@@ -170,22 +170,24 @@ export async function action({ request }: ActionFunctionArgs) {
       try {
         console.log('[Price Update] Starting price update process');
         console.log('[Price Update] New price:', newPrice);
+        console.log('[Price Update] Edit type:', editType);
         console.log('[Price Update] Product IDs:', productIdsArray);
 
-        // Update each product's price
+        // Update each product's price sequentially
         for (const productId of productIdsArray) {
           console.log(`[Price Update] Processing product ID: ${productId}`);
           
-          // First, get the product's variants
+          // First, get all product variants
           const getProductQuery = `#graphql
             query {
               product(id: "gid://shopify/Product/${productId}") {
                 id
-                variants(first: 1) {
+                variants(first: 250) {
                   edges {
                     node {
                       id
                       price
+                      compareAtPrice
                     }
                   }
                 }
@@ -209,8 +211,9 @@ export async function action({ request }: ActionFunctionArgs) {
             throw new Error(`No variants found for product: ${productId}`);
           }
 
-          const variantId = productData.data.product.variants.edges[0].node.id;
-          console.log('[Price Update] Found variant ID:', variantId);
+          // Get all variant IDs
+          const variantIds = productData.data.product.variants.edges.map(edge => edge.node.id);
+          console.log('[Price Update] Found variant IDs:', variantIds);
 
           const mutation = `#graphql
             mutation productVariantsBulkUpdate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
@@ -228,15 +231,16 @@ export async function action({ request }: ActionFunctionArgs) {
             }
           `;
 
+          // Create variables for all variants
           const variables = {
             productId: `gid://shopify/Product/${productId}`,
-            variants: [{
+            variants: variantIds.map(variantId => ({
               id: variantId,
               ...(editType === 'setCompareAtPrice' ? { compareAtPrice: newPrice } : { price: newPrice })
-            }]
+            }))
           };
 
-          console.log('[Price Update] Updating price with variables:', variables);
+          console.log('[Price Update] Updating prices with variables:', variables);
           const updateResponse = await admin.graphql(mutation, {
             variables: variables
           });
@@ -255,7 +259,7 @@ export async function action({ request }: ActionFunctionArgs) {
             throw new Error(`User errors: ${JSON.stringify(userErrors)}`);
           }
 
-          console.log('[Price Update] Successfully updated price for product:', productId);
+          console.log('[Price Update] Successfully updated prices for product:', productId);
         }
 
         console.log('[Price Update] All products updated successfully');
