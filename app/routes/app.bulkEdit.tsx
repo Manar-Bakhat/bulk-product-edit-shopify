@@ -314,7 +314,9 @@ export async function action({ request }: ActionFunctionArgs) {
               newTitle = currentTitle.replace(regex, '').trim();
               break;
             case 'replaceText':
-              newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), replacementText);
+              // Create a case-insensitive regex pattern for replacement
+              const replaceRegex = new RegExp(textToAdd, 'gi');
+              newTitle = currentTitle.replace(replaceRegex, replacementText);
               break;
             case 'capitalize':
               switch (capitalizationType) {

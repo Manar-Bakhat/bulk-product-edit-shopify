@@ -397,6 +397,57 @@ export function EditTitle() {
       }
     }
 
+    // Check if text exists in any product title for replaceText operation
+    if (selectedEditOption === 'replaceText') {
+      const productsWithText = products.filter(product => 
+        product.title.toLowerCase().includes(textToReplace.toLowerCase())
+      );
+
+      if (productsWithText.length === 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Text to replace not found in any of the filtered products',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+        return;
+      }
+
+      // If text exists in some products, show confirmation dialog
+      if (productsWithText.length < products.length) {
+        Swal.fire({
+          title: 'Warning',
+          text: `The text "${textToReplace}" was found in ${productsWithText.length} out of ${products.length} products. Do you want to continue?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, continue',
+          cancelButtonText: 'No, cancel'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Continue with the bulk edit
+            const productIds = productsWithText.map(product => product.id);
+            const productTitles = productsWithText.reduce((acc, product) => {
+              acc[product.id] = product.title;
+              return acc;
+            }, {} as Record<string, string>);
+
+            const formData = new FormData();
+            formData.append("actionType", "bulkEdit");
+            formData.append("section", "title");
+            formData.append("productIds", JSON.stringify(productIds));
+            formData.append("productTitles", JSON.stringify(productTitles));
+            formData.append("textToAdd", textToReplace);
+            formData.append("replacementText", replacementText);
+            formData.append("editType", selectedEditOption);
+            formData.append("capitalizationType", capitalizationType);
+            formData.append("numberOfCharacters", numberOfCharacters);
+            submit(formData, { method: "post" });
+          }
+        });
+        return;
+      }
+    }
+
     const productIds = products.map(product => product.id);
     const productTitles = products.reduce((acc, product) => {
       acc[product.id] = product.title;
@@ -429,6 +480,7 @@ export function EditTitle() {
         // Reset form fields
         setSelectedEditOption('');
         setTextToAdd('');
+        setTextToReplace('');
         setReplacementText('');
         setNumberOfCharacters('');
 
