@@ -301,6 +301,17 @@ export function EditPrice() {
   const handleBulkEdit = () => {
     console.log('[EditPrice] Starting bulk edit process');
     
+    // Check if products have been filtered first
+    if (!hasSearched || products.length === 0) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Please filter and preview products first before starting bulk edit',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+    
     // Validate price input
     const price = parseFloat(newPrice);
     if (isNaN(price) || price < 0) {
