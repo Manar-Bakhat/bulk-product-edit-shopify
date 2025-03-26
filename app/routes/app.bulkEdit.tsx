@@ -309,7 +309,9 @@ export async function action({ request }: ActionFunctionArgs) {
               newTitle = `${currentTitle} ${textToAdd}`;
               break;
             case 'removeText':
-              newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), '').trim();
+              // Create a case-insensitive regex pattern
+              const regex = new RegExp(textToAdd, 'gi');
+              newTitle = currentTitle.replace(regex, '').trim();
               break;
             case 'replaceText':
               newTitle = currentTitle.replace(new RegExp(textToAdd, 'g'), replacementText);
