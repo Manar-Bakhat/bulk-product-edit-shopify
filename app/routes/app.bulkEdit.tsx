@@ -70,6 +70,7 @@ interface GraphQLResponse {
           node: {
             id: string;
             price: string;
+            compareAtPrice?: string | null;
           };
         }>;
       };
@@ -82,6 +83,7 @@ interface GraphQLResponse {
             node: {
               id: string;
               price: string;
+              compareAtPrice?: string | null;
             };
           }>;
         };
@@ -95,6 +97,7 @@ interface GraphQLResponse {
       variants: Array<{
         id: string;
         price: string;
+        compareAtPrice?: string | null;
       }>;
       userErrors: Array<{
         field: string;
@@ -166,12 +169,19 @@ export async function action({ request }: ActionFunctionArgs) {
     if (section === "price") {
       const newPrice = formData.get("newPrice") as string;
       const editType = formData.get("editType") as string;
+      const adjustmentType = formData.get("adjustmentType") as string;
+      const adjustmentAmount = formData.get("adjustmentAmount") as string;
 
       try {
         console.log('[Price Update] Starting price update process');
-        console.log('[Price Update] New price:', newPrice);
         console.log('[Price Update] Edit type:', editType);
         console.log('[Price Update] Product IDs:', productIdsArray);
+        if (editType === 'adjustPrice') {
+          console.log('[Price Update] Adjustment type:', adjustmentType);
+          console.log('[Price Update] Adjustment amount:', adjustmentAmount);
+        } else {
+          console.log('[Price Update] New price:', newPrice);
+        }
 
         // Update each product's price sequentially
         for (const productId of productIdsArray) {
@@ -211,9 +221,13 @@ export async function action({ request }: ActionFunctionArgs) {
             throw new Error(`No variants found for product: ${productId}`);
           }
 
-          // Get all variant IDs
-          const variantIds = productData.data.product.variants.edges.map(edge => edge.node.id);
-          console.log('[Price Update] Found variant IDs:', variantIds);
+          // Get all variant IDs and their current prices
+          const variants = productData.data.product.variants.edges.map(edge => ({
+            id: edge.node.id,
+            price: parseFloat(edge.node.price),
+            compareAtPrice: edge.node.compareAtPrice ? parseFloat(edge.node.compareAtPrice) : null
+          }));
+          console.log('[Price Update] Found variants:', variants);
 
           const mutation = `#graphql
             mutation productVariantsBulkUpdate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
@@ -231,13 +245,35 @@ export async function action({ request }: ActionFunctionArgs) {
             }
           `;
 
-          // Create variables for all variants
+          // Create variables for all variants based on edit type
           const variables = {
             productId: `gid://shopify/Product/${productId}`,
-            variants: variantIds.map(variantId => ({
-              id: variantId,
-              ...(editType === 'setCompareAtPrice' ? { compareAtPrice: newPrice } : { price: newPrice })
-            }))
+            variants: variants.map(variant => {
+              let newVariantPrice = variant.price;
+              
+              if (editType === 'adjustPrice') {
+                const adjustment = parseFloat(adjustmentAmount);
+                if (adjustmentType === 'increase') {
+                  newVariantPrice = variant.price + adjustment;
+                } else {
+                  newVariantPrice = variant.price - adjustment;
+                  // Ensure price doesn't go below 0
+                  if (newVariantPrice < 0) {
+                    newVariantPrice = 0;
+                  }
+                }
+              } else {
+                newVariantPrice = parseFloat(newPrice);
+              }
+
+              return {
+                id: variant.id,
+                ...(editType === 'setCompareAtPrice' 
+                  ? { compareAtPrice: newPrice } 
+                  : { price: newVariantPrice.toString() }
+                )
+              };
+            })
           };
 
           console.log('[Price Update] Updating prices with variables:', variables);

@@ -249,8 +249,19 @@ export function EditPrice() {
   // Price editing options
   const editOptions = [
     { label: 'Set price to', value: 'setPrice' },
-    { label: 'Set compare-at price to', value: 'setCompareAtPrice' }
+    { label: 'Set compare-at price to', value: 'setCompareAtPrice' },
+    { label: 'Adjust price by amount', value: 'adjustPrice' }
   ];
+
+  // Adjustment type options
+  const adjustmentTypeOptions = [
+    { label: 'Increase', value: 'increase' },
+    { label: 'Decrease', value: 'decrease' }
+  ];
+
+  // State for price adjustment
+  const [adjustmentType, setAdjustmentType] = useState('');
+  const [adjustmentAmount, setAdjustmentAmount] = useState('');
 
   /**
    * Handles field selection changes
@@ -312,17 +323,31 @@ export function EditPrice() {
       return;
     }
     
-    // Validate price input
-    const price = parseFloat(newPrice);
-    if (isNaN(price) || price < 0) {
-      console.log('[EditPrice] Invalid price input:', newPrice);
-      Swal.fire({
-        title: 'Error',
-        text: 'Please enter a valid price',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
-      return;
+    // Validate price input based on edit type
+    if (selectedEditOption === 'adjustPrice') {
+      const amount = parseFloat(adjustmentAmount);
+      if (isNaN(amount) || amount <= 0) {
+        console.log('[EditPrice] Invalid adjustment amount:', adjustmentAmount);
+        Swal.fire({
+          title: 'Error',
+          text: 'Please enter a valid adjustment amount',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+        return;
+      }
+    } else {
+      const price = parseFloat(newPrice);
+      if (isNaN(price) || price < 0) {
+        console.log('[EditPrice] Invalid price input:', newPrice);
+        Swal.fire({
+          title: 'Error',
+          text: 'Please enter a valid price',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+        return;
+      }
     }
 
     const productIds = products.map(product => product.id);
@@ -335,7 +360,9 @@ export function EditPrice() {
       productIds,
       productPrices,
       newPrice,
-      selectedEditOption
+      selectedEditOption,
+      adjustmentType,
+      adjustmentAmount
     });
 
     const formData = new FormData();
@@ -345,6 +372,11 @@ export function EditPrice() {
     formData.append("productPrices", JSON.stringify(productPrices));
     formData.append("newPrice", newPrice);
     formData.append("editType", selectedEditOption);
+    
+    if (selectedEditOption === 'adjustPrice') {
+      formData.append("adjustmentType", adjustmentType);
+      formData.append("adjustmentAmount", adjustmentAmount);
+    }
 
     // Log the actual form data being sent
     console.log('[EditPrice] Form data being sent:', {
@@ -353,7 +385,9 @@ export function EditPrice() {
       productIds: formData.get("productIds"),
       productPrices: formData.get("productPrices"),
       newPrice: formData.get("newPrice"),
-      editType: formData.get("editType")
+      editType: formData.get("editType"),
+      adjustmentType: formData.get("adjustmentType"),
+      adjustmentAmount: formData.get("adjustmentAmount")
     });
 
     console.log('[EditPrice] Submitting form data...');
@@ -575,6 +609,40 @@ export function EditPrice() {
                   />
                 </div>
                 <Button variant="primary" onClick={handleBulkEdit} tone="success">
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'adjustPrice' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Adjust Price By Amount</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <Select
+                    label=""
+                    options={adjustmentTypeOptions}
+                    value={adjustmentType}
+                    onChange={setAdjustmentType}
+                    placeholder="Select adjustment type"
+                  />
+                </div>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={adjustmentAmount}
+                    onChange={setAdjustmentAmount}
+                    placeholder="Enter adjustment amount"
+                    autoComplete="off"
+                    prefix="$"
+                  />
+                </div>
+                <Button 
+                  variant="primary" 
+                  onClick={handleBulkEdit} 
+                  tone="success"
+                  disabled={!adjustmentType || !adjustmentAmount}
+                >
                   Start bulk edit now
                 </Button>
               </BlockStack>

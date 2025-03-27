@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a7db49394bfec100b10f31a12f89f98d"
-application_url = "https://art-yesterday-herb-unknown.trycloudflare.com"
+application_url = "https://objects-inspector-bracket-baptist.trycloudflare.com"
 embedded = true
 name = "bulk-product-edit"
 handle = "bulk-product-edit-6"
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://art-yesterday-herb-unknown.trycloudflare.com/auth/callback",
-  "https://art-yesterday-herb-unknown.trycloudflare.com/auth/shopify/callback",
-  "https://art-yesterday-herb-unknown.trycloudflare.com/api/auth/callback"
+  "https://objects-inspector-bracket-baptist.trycloudflare.com/auth/callback",
+  "https://objects-inspector-bracket-baptist.trycloudflare.com/auth/shopify/callback",
+  "https://objects-inspector-bracket-baptist.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
