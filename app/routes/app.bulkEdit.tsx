@@ -250,6 +250,7 @@ export async function action({ request }: ActionFunctionArgs) {
             productId: `gid://shopify/Product/${productId}`,
             variants: variants.map(variant => {
               let newVariantPrice = variant.price;
+              let newCompareAtPrice = variant.compareAtPrice;
               
               if (editType === 'adjustPrice') {
                 const adjustment = parseFloat(adjustmentAmount);
@@ -262,6 +263,17 @@ export async function action({ request }: ActionFunctionArgs) {
                     newVariantPrice = 0;
                   }
                 }
+              } else if (editType === 'adjustCompareAtPrice') {
+                const adjustment = parseFloat(adjustmentAmount);
+                if (adjustmentType === 'increase') {
+                  newCompareAtPrice = (variant.compareAtPrice || variant.price) + adjustment;
+                } else {
+                  newCompareAtPrice = (variant.compareAtPrice || variant.price) - adjustment;
+                  // Ensure compare-at price doesn't go below 0
+                  if (newCompareAtPrice < 0) {
+                    newCompareAtPrice = 0;
+                  }
+                }
               } else {
                 newVariantPrice = parseFloat(newPrice);
               }
@@ -270,7 +282,9 @@ export async function action({ request }: ActionFunctionArgs) {
                 id: variant.id,
                 ...(editType === 'setCompareAtPrice' 
                   ? { compareAtPrice: newPrice } 
-                  : { price: newVariantPrice.toString() }
+                  : editType === 'adjustCompareAtPrice'
+                    ? { compareAtPrice: newCompareAtPrice?.toString() || '0' }
+                    : { price: newVariantPrice.toString() }
                 )
               };
             })

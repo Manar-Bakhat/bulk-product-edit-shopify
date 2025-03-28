@@ -250,7 +250,8 @@ export function EditPrice() {
   const editOptions = [
     { label: 'Set price to', value: 'setPrice' },
     { label: 'Set compare-at price to', value: 'setCompareAtPrice' },
-    { label: 'Adjust price by amount', value: 'adjustPrice' }
+    { label: 'Adjust price by amount', value: 'adjustPrice' },
+    { label: 'Adjust compare-at price by amount', value: 'adjustCompareAtPrice' }
   ];
 
   // Adjustment type options
@@ -324,7 +325,7 @@ export function EditPrice() {
     }
     
     // Validate price input based on edit type
-    if (selectedEditOption === 'adjustPrice') {
+    if (selectedEditOption === 'adjustPrice' || selectedEditOption === 'adjustCompareAtPrice') {
       const amount = parseFloat(adjustmentAmount);
       if (isNaN(amount) || amount <= 0) {
         console.log('[EditPrice] Invalid adjustment amount:', adjustmentAmount);
@@ -373,7 +374,7 @@ export function EditPrice() {
     formData.append("newPrice", newPrice);
     formData.append("editType", selectedEditOption);
     
-    if (selectedEditOption === 'adjustPrice') {
+    if (selectedEditOption === 'adjustPrice' || selectedEditOption === 'adjustCompareAtPrice') {
       formData.append("adjustmentType", adjustmentType);
       formData.append("adjustmentAmount", adjustmentAmount);
     }
@@ -407,6 +408,8 @@ export function EditPrice() {
         // Reset form fields
         setSelectedEditOption('');
         setNewPrice('');
+        setAdjustmentType('');
+        setAdjustmentAmount('');
 
         // Show success message
         Swal.fire({
@@ -617,6 +620,40 @@ export function EditPrice() {
             {selectedEditOption === 'adjustPrice' && (
               <BlockStack gap="400">
                 <Text variant="headingSm" as="h3">Adjust Price By Amount</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <Select
+                    label=""
+                    options={adjustmentTypeOptions}
+                    value={adjustmentType}
+                    onChange={setAdjustmentType}
+                    placeholder="Select adjustment type"
+                  />
+                </div>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={adjustmentAmount}
+                    onChange={setAdjustmentAmount}
+                    placeholder="Enter adjustment amount"
+                    autoComplete="off"
+                    prefix="$"
+                  />
+                </div>
+                <Button 
+                  variant="primary" 
+                  onClick={handleBulkEdit} 
+                  tone="success"
+                  disabled={!adjustmentType || !adjustmentAmount}
+                >
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'adjustCompareAtPrice' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Adjust Compare-at Price By Amount</Text>
                 <div style={{ maxWidth: '400px' }}>
                   <Select
                     label=""
