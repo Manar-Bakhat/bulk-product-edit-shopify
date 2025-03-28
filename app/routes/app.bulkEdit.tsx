@@ -171,6 +171,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const editType = formData.get("editType") as string;
       const adjustmentType = formData.get("adjustmentType") as string;
       const adjustmentAmount = formData.get("adjustmentAmount") as string;
+      const setCompareAtPriceToOriginal = formData.get("setCompareAtPriceToOriginal") === "true";
 
       try {
         console.log('[Price Update] Starting price update process');
@@ -179,6 +180,7 @@ export async function action({ request }: ActionFunctionArgs) {
         if (editType === 'adjustPrice') {
           console.log('[Price Update] Adjustment type:', adjustmentType);
           console.log('[Price Update] Adjustment amount:', adjustmentAmount);
+          console.log('[Price Update] Set compare-at price to original:', setCompareAtPriceToOriginal);
         } else {
           console.log('[Price Update] New price:', newPrice);
         }
@@ -254,14 +256,21 @@ export async function action({ request }: ActionFunctionArgs) {
               
               if (editType === 'adjustPrice') {
                 const adjustment = parseFloat(adjustmentAmount);
+                const originalPrice = variant.price;
+                
                 if (adjustmentType === 'increase') {
-                  newVariantPrice = variant.price + adjustment;
+                  newVariantPrice = originalPrice + adjustment;
                 } else {
-                  newVariantPrice = variant.price - adjustment;
+                  newVariantPrice = originalPrice - adjustment;
                   // Ensure price doesn't go below 0
                   if (newVariantPrice < 0) {
                     newVariantPrice = 0;
                   }
+                }
+
+                // If checkbox is checked, set compare-at price to original price
+                if (setCompareAtPriceToOriginal) {
+                  newCompareAtPrice = originalPrice;
                 }
               } else if (editType === 'adjustCompareAtPrice') {
                 const adjustment = parseFloat(adjustmentAmount);
@@ -284,7 +293,12 @@ export async function action({ request }: ActionFunctionArgs) {
                   ? { compareAtPrice: newPrice } 
                   : editType === 'adjustCompareAtPrice'
                     ? { compareAtPrice: newCompareAtPrice?.toString() || '0' }
-                    : { price: newVariantPrice.toString() }
+                    : editType === 'adjustPrice'
+                      ? {
+                          price: newVariantPrice.toString(),
+                          ...(setCompareAtPriceToOriginal && { compareAtPrice: variant.price.toString() })
+                        }
+                      : { price: newVariantPrice.toString() }
                 )
               };
             })

@@ -25,7 +25,8 @@ import {
   Badge,
   ProgressBar,
   Pagination,
-  Divider
+  Divider,
+  Checkbox
 } from "@shopify/polaris";
 import { FilterIcon, ResetIcon, EditIcon } from '@shopify/polaris-icons';
 import { useSubmit, useActionData, useLoaderData, useSearchParams } from "@remix-run/react";
@@ -95,6 +96,9 @@ export function EditPrice() {
   // State for price editing
   const [selectedEditOption, setSelectedEditOption] = useState('');
   const [newPrice, setNewPrice] = useState('');
+  const [adjustmentType, setAdjustmentType] = useState('');
+  const [adjustmentAmount, setAdjustmentAmount] = useState('');
+  const [setCompareAtPriceToOriginal, setSetCompareAtPriceToOriginal] = useState(false);
   
   // Remix hooks for form submission and data handling
   const submit = useSubmit();
@@ -108,6 +112,11 @@ export function EditPrice() {
     setHasSearched(false);
     setProducts([]);
     setCurrentPage(1);
+    setSelectedEditOption('');
+    setNewPrice('');
+    setAdjustmentType('');
+    setAdjustmentAmount('');
+    setSetCompareAtPriceToOriginal(false);
   }, []); // Empty dependency array means this runs once on mount
 
   /**
@@ -260,10 +269,6 @@ export function EditPrice() {
     { label: 'Decrease', value: 'decrease' }
   ];
 
-  // State for price adjustment
-  const [adjustmentType, setAdjustmentType] = useState('');
-  const [adjustmentAmount, setAdjustmentAmount] = useState('');
-
   /**
    * Handles field selection changes
    * Updates condition options based on selected field
@@ -363,7 +368,8 @@ export function EditPrice() {
       newPrice,
       selectedEditOption,
       adjustmentType,
-      adjustmentAmount
+      adjustmentAmount,
+      setCompareAtPriceToOriginal
     });
 
     const formData = new FormData();
@@ -377,6 +383,7 @@ export function EditPrice() {
     if (selectedEditOption === 'adjustPrice' || selectedEditOption === 'adjustCompareAtPrice') {
       formData.append("adjustmentType", adjustmentType);
       formData.append("adjustmentAmount", adjustmentAmount);
+      formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
     }
 
     // Log the actual form data being sent
@@ -388,7 +395,8 @@ export function EditPrice() {
       newPrice: formData.get("newPrice"),
       editType: formData.get("editType"),
       adjustmentType: formData.get("adjustmentType"),
-      adjustmentAmount: formData.get("adjustmentAmount")
+      adjustmentAmount: formData.get("adjustmentAmount"),
+      setCompareAtPriceToOriginal: formData.get("setCompareAtPriceToOriginal")
     });
 
     console.log('[EditPrice] Submitting form data...');
@@ -410,6 +418,7 @@ export function EditPrice() {
         setNewPrice('');
         setAdjustmentType('');
         setAdjustmentAmount('');
+        setSetCompareAtPriceToOriginal(false);
 
         // Show success message
         Swal.fire({
@@ -638,6 +647,14 @@ export function EditPrice() {
                     placeholder="Enter adjustment amount"
                     autoComplete="off"
                     prefix="$"
+                  />
+                </div>
+                <div style={{ maxWidth: '400px' }}>
+                  <Checkbox
+                    label="When completed, set compare-at-price to original price"
+                    checked={setCompareAtPriceToOriginal}
+                    onChange={setSetCompareAtPriceToOriginal}
+                    helpText="This will set the compare-at-price to the original price before the adjustment"
                   />
                 </div>
                 <Button 
