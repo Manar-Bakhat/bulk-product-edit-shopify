@@ -178,7 +178,8 @@ export async function action({ request }: ActionFunctionArgs) {
         console.log('[Price Update] Edit type:', editType);
         console.log('[Price Update] Product IDs:', productIdsArray);
         if (editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
-            editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage') {
+            editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage' ||
+            editType === 'setPriceToCompareAtPercentage') {
           console.log('[Price Update] Adjustment type:', adjustmentType);
           console.log('[Price Update] Adjustment amount:', adjustmentAmount);
           console.log('[Price Update] Set compare-at price to original:', setCompareAtPriceToOriginal);
@@ -187,8 +188,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         // Validate required fields based on edit type
-        if (editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
-            editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage') {
+        if (editType === 'adjustPrice' || editType === 'adjustCompareAtPrice') {
           if (!adjustmentType || !adjustmentAmount) {
             throw new Error('Adjustment type and amount are required for price adjustments');
           }
@@ -197,9 +197,22 @@ export async function action({ request }: ActionFunctionArgs) {
           if (isNaN(amount) || amount <= 0) {
             throw new Error('Invalid adjustment amount');
           }
+        } else if (editType === 'adjustPriceByPercentage' || editType === 'adjustCompareAtPriceByPercentage') {
+          if (!adjustmentType || !adjustmentAmount) {
+            throw new Error('Adjustment type and percentage are required for percentage adjustments');
+          }
           
-          if ((editType === 'adjustPriceByPercentage' || editType === 'adjustCompareAtPriceByPercentage') && 
-              (amount <= 0 || amount > 100)) {
+          const percentage = parseFloat(adjustmentAmount);
+          if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+            throw new Error('Percentage must be between 0 and 100');
+          }
+        } else if (editType === 'setPriceToCompareAtPercentage') {
+          if (!adjustmentAmount) {
+            throw new Error('Percentage is required for setting price to percentage of compare-at price');
+          }
+          
+          const percentage = parseFloat(adjustmentAmount);
+          if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
             throw new Error('Percentage must be between 0 and 100');
           }
         }
@@ -335,6 +348,17 @@ export async function action({ request }: ActionFunctionArgs) {
                     newCompareAtPrice = 0;
                   }
                 }
+              } else if (editType === 'setPriceToCompareAtPercentage') {
+                const percentage = parseFloat(adjustmentAmount);
+                const compareAtPrice = variant.compareAtPrice || variant.price;
+                
+                // Set the new price to the specified percentage of the compare-at price
+                newVariantPrice = compareAtPrice * (percentage / 100);
+                
+                // Ensure price doesn't go below 0
+                if (newVariantPrice < 0) {
+                  newVariantPrice = 0;
+                }
               } else {
                 newVariantPrice = parseFloat(newPrice);
               }
@@ -350,7 +374,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   ? { compareAtPrice: newPrice } 
                   : editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage'
                     ? { compareAtPrice: newCompareAtPrice?.toString() || '0' }
-                    : editType === 'adjustPrice' || editType === 'adjustPriceByPercentage'
+                    : editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || editType === 'setPriceToCompareAtPercentage'
                       ? {
                           price: newVariantPrice.toString(),
                           ...(setCompareAtPriceToOriginal && { compareAtPrice: variant.price.toString() })
