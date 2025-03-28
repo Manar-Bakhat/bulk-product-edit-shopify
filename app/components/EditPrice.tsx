@@ -263,7 +263,8 @@ export function EditPrice() {
     { label: 'Adjust price by percentage', value: 'adjustPriceByPercentage' },
     { label: 'Adjust compare-at price by amount', value: 'adjustCompareAtPrice' },
     { label: 'Adjust compare-at price by percentage', value: 'adjustCompareAtPriceByPercentage' },
-    { label: 'Update price to percentage of compare-at price', value: 'setPriceToCompareAtPercentage' }
+    { label: 'Update price to percentage of compare-at price', value: 'setPriceToCompareAtPercentage' },
+    { label: 'Update compare-at price to percentage of price', value: 'setCompareAtPriceToPricePercentage' }
   ];
 
   // Adjustment type options
@@ -347,7 +348,8 @@ export function EditPrice() {
       }
     } else if (selectedEditOption === 'adjustPriceByPercentage' || 
                selectedEditOption === 'adjustCompareAtPriceByPercentage' || 
-               selectedEditOption === 'setPriceToCompareAtPercentage') {
+               selectedEditOption === 'setPriceToCompareAtPercentage' ||
+               selectedEditOption === 'setCompareAtPriceToPricePercentage') {
       if (!adjustmentAmount) {
         console.log('[EditPrice] No percentage value provided');
         Swal.fire({
@@ -414,9 +416,10 @@ export function EditPrice() {
       formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
     } else if (selectedEditOption === 'adjustPriceByPercentage' || 
                selectedEditOption === 'adjustCompareAtPriceByPercentage' || 
-               selectedEditOption === 'setPriceToCompareAtPercentage') {
+               selectedEditOption === 'setPriceToCompareAtPercentage' ||
+               selectedEditOption === 'setCompareAtPriceToPricePercentage') {
       formData.append("adjustmentAmount", adjustmentAmount);
-      if (selectedEditOption !== 'setPriceToCompareAtPercentage') {
+      if (selectedEditOption !== 'setPriceToCompareAtPercentage' && selectedEditOption !== 'setCompareAtPriceToPricePercentage') {
         formData.append("adjustmentType", adjustmentType);
         formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
       }
@@ -817,6 +820,31 @@ export function EditPrice() {
             {selectedEditOption === 'setPriceToCompareAtPercentage' && (
               <BlockStack gap="400">
                 <Text variant="headingSm" as="h3">Update Price to Percentage of Compare-at Price</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={adjustmentAmount}
+                    onChange={setAdjustmentAmount}
+                    placeholder="Enter percentage (0-100)"
+                    autoComplete="off"
+                    suffix="%"
+                  />
+                </div>
+                <Button 
+                  variant="primary" 
+                  onClick={handleBulkEdit} 
+                  tone="success"
+                  disabled={!adjustmentAmount}
+                >
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'setCompareAtPriceToPricePercentage' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Update Compare-at Price to Percentage of Price</Text>
                 <div style={{ maxWidth: '400px' }}>
                   <TextField
                     label=""
