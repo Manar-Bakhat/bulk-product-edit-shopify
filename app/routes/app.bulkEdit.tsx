@@ -179,7 +179,7 @@ export async function action({ request }: ActionFunctionArgs) {
         console.log('[Price Update] Product IDs:', productIdsArray);
         if (editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
             editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage' ||
-            editType === 'setPriceToCompareAtPercentage' || editType === 'setCompareAtPriceToPricePercentage') {
+            editType === 'setPriceToCompareAtPercentage' || editType === 'setPriceToCompareAtPercentageLess') {
           console.log('[Price Update] Adjustment type:', adjustmentType);
           console.log('[Price Update] Adjustment amount:', adjustmentAmount);
           console.log('[Price Update] Set compare-at price to original:', setCompareAtPriceToOriginal);
@@ -206,7 +206,7 @@ export async function action({ request }: ActionFunctionArgs) {
           if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
             throw new Error('Percentage must be between 0 and 100');
           }
-        } else if (editType === 'setPriceToCompareAtPercentage' || editType === 'setCompareAtPriceToPricePercentage') {
+        } else if (editType === 'setPriceToCompareAtPercentage' || editType === 'setPriceToCompareAtPercentageLess') {
           if (!adjustmentAmount) {
             throw new Error('Percentage is required for setting price to percentage');
           }
@@ -359,18 +359,18 @@ export async function action({ request }: ActionFunctionArgs) {
                 if (newVariantPrice < 0) {
                   newVariantPrice = 0;
                 }
-              } else if (editType === 'setCompareAtPriceToPricePercentage') {
+              } else if (editType === 'setPriceToCompareAtPercentageLess') {
                 const percentage = parseFloat(adjustmentAmount);
-                const currentPrice = variant.price;
+                const compareAtPrice = variant.compareAtPrice || variant.price;
                 
-                // Calculate compare-at price by dividing current price by percentage (as decimal)
-                // Example: If price is 4.45 and percentage is 10%, then:
-                // 4.45 ÷ 0.10 = 44.50
-                newCompareAtPrice = currentPrice / (percentage / 100);
+                // Calculate the new price by subtracting the percentage from the compare-at price
+                // Example: If compare-at price is 44.50 and percentage is 5%, then:
+                // 44.50 - (44.50 × 0.05) = 42.275
+                newVariantPrice = compareAtPrice - (compareAtPrice * (percentage / 100));
                 
-                // Ensure compare-at price doesn't go below 0
-                if (newCompareAtPrice < 0) {
-                  newCompareAtPrice = 0;
+                // Ensure price doesn't go below 0
+                if (newVariantPrice < 0) {
+                  newVariantPrice = 0;
                 }
               } else {
                 newVariantPrice = parseFloat(newPrice);
@@ -385,9 +385,10 @@ export async function action({ request }: ActionFunctionArgs) {
                 id: variant.id,
                 ...(editType === 'setCompareAtPrice' 
                   ? { compareAtPrice: newPrice } 
-                  : editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage' || editType === 'setCompareAtPriceToPricePercentage'
+                  : editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage'
                     ? { compareAtPrice: newCompareAtPrice?.toString() || '0' }
-                    : editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || editType === 'setPriceToCompareAtPercentage'
+                    : editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
+                      editType === 'setPriceToCompareAtPercentage' || editType === 'setPriceToCompareAtPercentageLess'
                       ? {
                           price: newVariantPrice.toString(),
                           ...(setCompareAtPriceToOriginal && { compareAtPrice: variant.price.toString() })
