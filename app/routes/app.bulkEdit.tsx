@@ -177,12 +177,31 @@ export async function action({ request }: ActionFunctionArgs) {
         console.log('[Price Update] Starting price update process');
         console.log('[Price Update] Edit type:', editType);
         console.log('[Price Update] Product IDs:', productIdsArray);
-        if (editType === 'adjustPrice') {
+        if (editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
+            editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage') {
           console.log('[Price Update] Adjustment type:', adjustmentType);
           console.log('[Price Update] Adjustment amount:', adjustmentAmount);
           console.log('[Price Update] Set compare-at price to original:', setCompareAtPriceToOriginal);
         } else {
           console.log('[Price Update] New price:', newPrice);
+        }
+
+        // Validate required fields based on edit type
+        if (editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
+            editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage') {
+          if (!adjustmentType || !adjustmentAmount) {
+            throw new Error('Adjustment type and amount are required for price adjustments');
+          }
+          
+          const amount = parseFloat(adjustmentAmount);
+          if (isNaN(amount) || amount <= 0) {
+            throw new Error('Invalid adjustment amount');
+          }
+          
+          if ((editType === 'adjustPriceByPercentage' || editType === 'adjustCompareAtPriceByPercentage') && 
+              (amount <= 0 || amount > 100)) {
+            throw new Error('Percentage must be between 0 and 100');
+          }
         }
 
         // Update each product's price sequentially
@@ -272,12 +291,45 @@ export async function action({ request }: ActionFunctionArgs) {
                 if (setCompareAtPriceToOriginal) {
                   newCompareAtPrice = originalPrice;
                 }
+              } else if (editType === 'adjustPriceByPercentage') {
+                const percentage = parseFloat(adjustmentAmount);
+                const originalPrice = variant.price;
+                
+                if (adjustmentType === 'increase') {
+                  newVariantPrice = originalPrice * (1 + percentage / 100);
+                } else {
+                  newVariantPrice = originalPrice * (1 - percentage / 100);
+                  // Ensure price doesn't go below 0
+                  if (newVariantPrice < 0) {
+                    newVariantPrice = 0;
+                  }
+                }
+
+                // If checkbox is checked, set compare-at price to original price
+                if (setCompareAtPriceToOriginal) {
+                  newCompareAtPrice = originalPrice;
+                }
               } else if (editType === 'adjustCompareAtPrice') {
                 const adjustment = parseFloat(adjustmentAmount);
+                const basePrice = variant.compareAtPrice || variant.price;
+                
                 if (adjustmentType === 'increase') {
-                  newCompareAtPrice = (variant.compareAtPrice || variant.price) + adjustment;
+                  newCompareAtPrice = basePrice + adjustment;
                 } else {
-                  newCompareAtPrice = (variant.compareAtPrice || variant.price) - adjustment;
+                  newCompareAtPrice = basePrice - adjustment;
+                  // Ensure compare-at price doesn't go below 0
+                  if (newCompareAtPrice < 0) {
+                    newCompareAtPrice = 0;
+                  }
+                }
+              } else if (editType === 'adjustCompareAtPriceByPercentage') {
+                const percentage = parseFloat(adjustmentAmount);
+                const basePrice = variant.compareAtPrice || variant.price;
+                
+                if (adjustmentType === 'increase') {
+                  newCompareAtPrice = basePrice * (1 + percentage / 100);
+                } else {
+                  newCompareAtPrice = basePrice * (1 - percentage / 100);
                   // Ensure compare-at price doesn't go below 0
                   if (newCompareAtPrice < 0) {
                     newCompareAtPrice = 0;
@@ -287,13 +339,18 @@ export async function action({ request }: ActionFunctionArgs) {
                 newVariantPrice = parseFloat(newPrice);
               }
 
+              // Ensure the price is a valid number before converting to string
+              if (isNaN(newVariantPrice)) {
+                throw new Error(`Invalid price calculation for variant ${variant.id}`);
+              }
+
               return {
                 id: variant.id,
                 ...(editType === 'setCompareAtPrice' 
                   ? { compareAtPrice: newPrice } 
-                  : editType === 'adjustCompareAtPrice'
+                  : editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage'
                     ? { compareAtPrice: newCompareAtPrice?.toString() || '0' }
-                    : editType === 'adjustPrice'
+                    : editType === 'adjustPrice' || editType === 'adjustPriceByPercentage'
                       ? {
                           price: newVariantPrice.toString(),
                           ...(setCompareAtPriceToOriginal && { compareAtPrice: variant.price.toString() })
