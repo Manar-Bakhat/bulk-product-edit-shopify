@@ -456,6 +456,28 @@ export async function action({ request }: ActionFunctionArgs) {
                   newCompareAtPrice = 0;
                   console.log(`[Price Update] Compare-at price was negative, setting to 0`);
                 }
+              } else if (editType === 'setPriceToCostPercentage') {
+                const percentage = parseFloat(adjustmentAmount);
+                const cost = variant.cost || 0;
+                
+                console.log(`[Price Update] Calculating price based on cost for variant ${variant.id}:`);
+                console.log(`[Price Update] Cost: ${cost} MAD`);
+                console.log(`[Price Update] Target percentage: ${percentage}%`);
+                
+                // Calculate the new price as a percentage of the cost
+                // Formula: Price = Cost × (1 + Percentage / 100)
+                // Example: If cost is 30 MAD and we want 50% markup:
+                // price = 30 × (1 + 50/100) = 30 × 1.5 = 45 MAD
+                newVariantPrice = Math.round((cost * (1 + percentage / 100)) * 100) / 100;
+                
+                console.log(`[Price Update] Calculated price: ${newVariantPrice} MAD`);
+                console.log(`[Price Update] Verification: ${cost} × (1 + ${percentage/100}) = ${newVariantPrice} MAD`);
+                
+                // Ensure price doesn't go below 0
+                if (newVariantPrice < 0) {
+                  newVariantPrice = 0;
+                  console.log(`[Price Update] Price was negative, setting to 0`);
+                }
               } else {
                 newVariantPrice = parseFloat(newPrice);
               }
