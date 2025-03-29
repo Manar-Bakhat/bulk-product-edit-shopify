@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "a7db49394bfec100b10f31a12f89f98d"
-application_url = "https://cgi-quantity-thursday-tt.trycloudflare.com"
+application_url = "https://arthur-donate-undefined-rounds.trycloudflare.com"
 embedded = true
 name = "bulk-product-edit"
 handle = "bulk-product-edit-6"
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://cgi-quantity-thursday-tt.trycloudflare.com/auth/callback",
-  "https://cgi-quantity-thursday-tt.trycloudflare.com/auth/shopify/callback",
-  "https://cgi-quantity-thursday-tt.trycloudflare.com/api/auth/callback"
+  "https://arthur-donate-undefined-rounds.trycloudflare.com/auth/callback",
+  "https://arthur-donate-undefined-rounds.trycloudflare.com/auth/shopify/callback",
+  "https://arthur-donate-undefined-rounds.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

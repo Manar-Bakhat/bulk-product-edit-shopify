@@ -264,7 +264,8 @@ export function EditPrice() {
     { label: 'Adjust compare-at price by amount', value: 'adjustCompareAtPrice' },
     { label: 'Adjust compare-at price by percentage', value: 'adjustCompareAtPriceByPercentage' },
     { label: 'Update price to percentage of compare-at price', value: 'setPriceToCompareAtPercentage' },
-    { label: 'Update price to percentage less than compare-at price', value: 'setPriceToCompareAtPercentageLess' }
+    { label: 'Update price to percentage less than compare-at price', value: 'setPriceToCompareAtPercentageLess' },
+    { label: 'Set compare-at price so that price is lower by percentage', value: 'setCompareAtPriceToPricePercentage' }
   ];
 
   // Adjustment type options
@@ -423,6 +424,9 @@ export function EditPrice() {
         formData.append("adjustmentType", adjustmentType);
         formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
       }
+    } else if (selectedEditOption === 'setCompareAtPriceToPricePercentage') {
+      formData.append("adjustmentAmount", adjustmentAmount);
+      formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
     }
 
     // Log the actual form data being sent
@@ -845,6 +849,31 @@ export function EditPrice() {
             {selectedEditOption === 'setPriceToCompareAtPercentageLess' && (
               <BlockStack gap="400">
                 <Text variant="headingSm" as="h3">Update Price to Percentage Less Than Compare-at Price</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={adjustmentAmount}
+                    onChange={setAdjustmentAmount}
+                    placeholder="Enter percentage (0-100)"
+                    autoComplete="off"
+                    suffix="%"
+                  />
+                </div>
+                <Button 
+                  variant="primary" 
+                  onClick={handleBulkEdit} 
+                  tone="success"
+                  disabled={!adjustmentAmount || parseFloat(adjustmentAmount) <= 0 || parseFloat(adjustmentAmount) > 100}
+                >
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'setCompareAtPriceToPricePercentage' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Set Compare-at Price So That Price Is Lower By Percentage</Text>
                 <div style={{ maxWidth: '400px' }}>
                   <TextField
                     label=""

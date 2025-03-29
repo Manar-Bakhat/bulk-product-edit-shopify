@@ -215,6 +215,15 @@ export async function action({ request }: ActionFunctionArgs) {
           if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
             throw new Error('Percentage must be between 0 and 100');
           }
+        } else if (editType === 'setCompareAtPriceToPricePercentage') {
+          if (!adjustmentAmount) {
+            throw new Error('Percentage is required for setting compare-at price to percentage');
+          }
+          
+          const percentage = parseFloat(adjustmentAmount);
+          if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+            throw new Error('Percentage must be between 0 and 100');
+          }
         }
 
         // Update each product's price sequentially
@@ -372,6 +381,29 @@ export async function action({ request }: ActionFunctionArgs) {
                 if (newVariantPrice < 0) {
                   newVariantPrice = 0;
                 }
+              } else if (editType === 'setCompareAtPriceToPricePercentage') {
+                const percentage = parseFloat(adjustmentAmount);
+                const currentPrice = variant.price;
+                
+                console.log(`[Price Update] Calculating compare-at price for variant ${variant.id}:`);
+                console.log(`[Price Update] Current price: ${currentPrice} MAD`);
+                console.log(`[Price Update] Target percentage: ${percentage}%`);
+                
+                // Calculate the new compare-at price so that the current price is lower by the specified percentage
+                // Example: If current price is 42.28 MAD and we want it to be 10% lower than compare-at price:
+                // compareAtPrice = 42.28 / (1 - 10/100) = 42.28 / 0.90 = 46.98 MAD
+                // This means: 46.98 - (46.98 × 0.10) = 42.28
+                // So the current price (42.28) is 10% lower than the compare-at price (46.98)
+                newCompareAtPrice = Math.round((currentPrice / (1 - percentage / 100)) * 100) / 100;
+                
+                console.log(`[Price Update] Calculated compare-at price: ${newCompareAtPrice} MAD`);
+                console.log(`[Price Update] Verification: ${newCompareAtPrice} - (${newCompareAtPrice} × ${percentage/100}) = ${newCompareAtPrice - (newCompareAtPrice * percentage/100)} MAD`);
+                
+                // Ensure compare-at price doesn't go below 0
+                if (newCompareAtPrice < 0) {
+                  newCompareAtPrice = 0;
+                  console.log(`[Price Update] Compare-at price was negative, setting to 0`);
+                }
               } else {
                 newVariantPrice = parseFloat(newPrice);
               }
@@ -385,7 +417,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 id: variant.id,
                 ...(editType === 'setCompareAtPrice' 
                   ? { compareAtPrice: newPrice } 
-                  : editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage'
+                  : editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage' || editType === 'setCompareAtPriceToPricePercentage'
                     ? { compareAtPrice: newCompareAtPrice?.toString() || '0' }
                     : editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
                       editType === 'setPriceToCompareAtPercentage' || editType === 'setPriceToCompareAtPercentageLess'
