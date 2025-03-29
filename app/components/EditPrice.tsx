@@ -101,6 +101,9 @@ export function EditPrice() {
   const [adjustmentAmount, setAdjustmentAmount] = useState('');
   const [setCompareAtPriceToOriginal, setSetCompareAtPriceToOriginal] = useState(false);
   
+  // Add new state for shipping cost
+  const [shippingCost, setShippingCost] = useState('');
+  
   // Remix hooks for form submission and data handling
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
@@ -118,6 +121,7 @@ export function EditPrice() {
     setAdjustmentType('');
     setAdjustmentAmount('');
     setSetCompareAtPriceToOriginal(false);
+    setShippingCost('');
   }, []); // Empty dependency array means this runs once on mount
 
   /**
@@ -268,7 +272,8 @@ export function EditPrice() {
     { label: 'Update price to percentage less than compare-at price', value: 'setPriceToCompareAtPercentageLess' },
     { label: 'Set compare-at price so that price is lower by percentage', value: 'setCompareAtPriceToPricePercentage' },
     { label: 'Update compare-at price based on cost-per-item', value: 'setCompareAtPriceToCostPercentage' },
-    { label: 'Update price based on cost-per-item', value: 'setPriceToCostPercentage' }
+    { label: 'Update price based on cost-per-item', value: 'setPriceToCostPercentage' },
+    { label: 'Update price based on cost-per-item and shipping', value: 'setPriceToCostAndShippingPercentage' }
   ];
 
   // Adjustment type options
@@ -436,6 +441,10 @@ export function EditPrice() {
     } else if (selectedEditOption === 'setPriceToCostPercentage') {
       formData.append("adjustmentAmount", adjustmentAmount);
       formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
+    } else if (selectedEditOption === 'setPriceToCostAndShippingPercentage') {
+      formData.append("adjustmentAmount", adjustmentAmount);
+      formData.append("shippingCost", shippingCost);
+      formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
     }
 
     // Log the actual form data being sent
@@ -471,6 +480,7 @@ export function EditPrice() {
         setAdjustmentType('');
         setAdjustmentAmount('');
         setSetCompareAtPriceToOriginal(false);
+        setShippingCost('');
 
         // Show success message
         Swal.fire({
@@ -490,6 +500,13 @@ export function EditPrice() {
       }
     }
   }, [actionData]);
+
+  // Reset shipping cost when component unmounts
+  useEffect(() => {
+    return () => {
+      setShippingCost('');
+    };
+  }, []);
 
   return (
     <BlockStack gap="500">
@@ -949,6 +966,42 @@ export function EditPrice() {
                   onClick={handleBulkEdit} 
                   tone="success"
                   disabled={!adjustmentAmount || parseFloat(adjustmentAmount) <= 0 || parseFloat(adjustmentAmount) > 100}
+                >
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'setPriceToCostAndShippingPercentage' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Update Price Based on Cost-per-item and Shipping</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={adjustmentAmount}
+                    onChange={setAdjustmentAmount}
+                    placeholder="Enter percentage (0-100)"
+                    autoComplete="off"
+                    suffix="%"
+                  />
+                </div>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={shippingCost}
+                    onChange={setShippingCost}
+                    placeholder="Enter shipping cost"
+                    autoComplete="off"
+                    prefix="$"
+                  />
+                </div>
+                <Button 
+                  variant="primary" 
+                  onClick={handleBulkEdit} 
+                  tone="success"
+                  disabled={!adjustmentAmount || !shippingCost || parseFloat(adjustmentAmount) <= 0 || parseFloat(adjustmentAmount) > 100 || parseFloat(shippingCost) < 0}
                 >
                   Start bulk edit now
                 </Button>

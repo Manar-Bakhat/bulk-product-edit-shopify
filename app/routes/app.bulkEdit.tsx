@@ -478,6 +478,30 @@ export async function action({ request }: ActionFunctionArgs) {
                   newVariantPrice = 0;
                   console.log(`[Price Update] Price was negative, setting to 0`);
                 }
+              } else if (editType === 'setPriceToCostAndShippingPercentage') {
+                const percentage = parseFloat(adjustmentAmount);
+                const shippingCost = parseFloat(formData.get("shippingCost") as string) || 0;
+                const cost = variant.cost || 0;
+                
+                console.log(`[Price Update] Calculating price based on cost and shipping for variant ${variant.id}:`);
+                console.log(`[Price Update] Cost: ${cost} MAD`);
+                console.log(`[Price Update] Shipping Cost: ${shippingCost} MAD`);
+                console.log(`[Price Update] Target percentage: ${percentage}%`);
+                
+                // Calculate the new price as a percentage of (cost + shipping)
+                // Formula: Price = (Cost + Shipping) × (1 + Percentage / 100)
+                // Example: If cost is 5 MAD, shipping is 2 MAD, and we want 10% markup:
+                // price = (5 + 2) × (1 + 10/100) = 7 × 1.10 = 7.70 MAD
+                newVariantPrice = Math.round(((cost + shippingCost) * (1 + percentage / 100)) * 100) / 100;
+                
+                console.log(`[Price Update] Calculated price: ${newVariantPrice} MAD`);
+                console.log(`[Price Update] Verification: (${cost} + ${shippingCost}) × (1 + ${percentage/100}) = ${newVariantPrice} MAD`);
+                
+                // Ensure price doesn't go below 0
+                if (newVariantPrice < 0) {
+                  newVariantPrice = 0;
+                  console.log(`[Price Update] Price was negative, setting to 0`);
+                }
               } else {
                 newVariantPrice = parseFloat(newPrice);
               }
