@@ -273,7 +273,8 @@ export function EditPrice() {
     { label: 'Set compare-at price so that price is lower by percentage', value: 'setCompareAtPriceToPricePercentage' },
     { label: 'Update compare-at price based on cost-per-item', value: 'setCompareAtPriceToCostPercentage' },
     { label: 'Update price based on cost-per-item', value: 'setPriceToCostPercentage' },
-    { label: 'Update price based on cost-per-item and shipping', value: 'setPriceToCostAndShippingPercentage' }
+    { label: 'Update price based on cost-per-item and shipping', value: 'setPriceToCostAndShippingPercentage' },
+    { label: 'Remove compare-at price', value: 'removeCompareAtPrice' }
   ];
 
   // Adjustment type options
@@ -445,6 +446,8 @@ export function EditPrice() {
       formData.append("adjustmentAmount", adjustmentAmount);
       formData.append("shippingCost", shippingCost);
       formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
+    } else if (selectedEditOption === 'removeCompareAtPrice') {
+      formData.append("editType", selectedEditOption);
     }
 
     // Log the actual form data being sent
@@ -1002,6 +1005,22 @@ export function EditPrice() {
                   onClick={handleBulkEdit} 
                   tone="success"
                   disabled={!adjustmentAmount || !shippingCost || parseFloat(adjustmentAmount) <= 0 || parseFloat(adjustmentAmount) > 100 || parseFloat(shippingCost) < 0}
+                >
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'removeCompareAtPrice' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Remove Compare-at Price</Text>
+                <Text variant="bodySm" as="p" tone="subdued">
+                  This will remove the compare-at price from all selected products.
+                </Text>
+                <Button 
+                  variant="primary" 
+                  onClick={handleBulkEdit} 
+                  tone="success"
                 >
                   Start bulk edit now
                 </Button>

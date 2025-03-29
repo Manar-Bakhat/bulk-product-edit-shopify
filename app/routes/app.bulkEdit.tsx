@@ -502,6 +502,10 @@ export async function action({ request }: ActionFunctionArgs) {
                   newVariantPrice = 0;
                   console.log(`[Price Update] Price was negative, setting to 0`);
                 }
+              } else if (editType === 'removeCompareAtPrice') {
+                console.log(`[Price Update] Removing compare-at price for variant ${variant.id}`);
+                // Set compare-at price to null to remove it
+                newCompareAtPrice = null;
               } else {
                 newVariantPrice = parseFloat(newPrice);
               }
@@ -518,6 +522,8 @@ export async function action({ request }: ActionFunctionArgs) {
                   : editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage' || 
                     editType === 'setCompareAtPriceToPricePercentage' || editType === 'setCompareAtPriceToCostPercentage'
                     ? { compareAtPrice: newCompareAtPrice?.toString() || '0' }
+                    : editType === 'removeCompareAtPrice'
+                    ? { compareAtPrice: null }
                     : editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
                       editType === 'setPriceToCompareAtPercentage' || editType === 'setPriceToCompareAtPercentageLess'
                       ? {
