@@ -69,6 +69,7 @@ interface ActionData {
   };
   error?: string;
   success?: boolean;
+  message?: string;
 }
 
 /**
@@ -265,7 +266,8 @@ export function EditPrice() {
     { label: 'Adjust compare-at price by percentage', value: 'adjustCompareAtPriceByPercentage' },
     { label: 'Update price to percentage of compare-at price', value: 'setPriceToCompareAtPercentage' },
     { label: 'Update price to percentage less than compare-at price', value: 'setPriceToCompareAtPercentageLess' },
-    { label: 'Set compare-at price so that price is lower by percentage', value: 'setCompareAtPriceToPricePercentage' }
+    { label: 'Set compare-at price so that price is lower by percentage', value: 'setCompareAtPriceToPricePercentage' },
+    { label: 'Update compare-at price based on cost-per-item', value: 'setCompareAtPriceToCostPercentage' }
   ];
 
   // Adjustment type options
@@ -427,6 +429,9 @@ export function EditPrice() {
     } else if (selectedEditOption === 'setCompareAtPriceToPricePercentage') {
       formData.append("adjustmentAmount", adjustmentAmount);
       formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
+    } else if (selectedEditOption === 'setCompareAtPriceToCostPercentage') {
+      formData.append("adjustmentAmount", adjustmentAmount);
+      formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
     }
 
     // Log the actual form data being sent
@@ -466,7 +471,7 @@ export function EditPrice() {
         // Show success message
         Swal.fire({
           title: 'Success!',
-          text: 'Product prices updated successfully!',
+          text: actionData.message || 'Product prices updated successfully!',
           icon: 'success',
           confirmButtonText: 'OK'
         });
@@ -874,6 +879,31 @@ export function EditPrice() {
             {selectedEditOption === 'setCompareAtPriceToPricePercentage' && (
               <BlockStack gap="400">
                 <Text variant="headingSm" as="h3">Set Compare-at Price So That Price Is Lower By Percentage</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={adjustmentAmount}
+                    onChange={setAdjustmentAmount}
+                    placeholder="Enter percentage (0-100)"
+                    autoComplete="off"
+                    suffix="%"
+                  />
+                </div>
+                <Button 
+                  variant="primary" 
+                  onClick={handleBulkEdit} 
+                  tone="success"
+                  disabled={!adjustmentAmount || parseFloat(adjustmentAmount) <= 0 || parseFloat(adjustmentAmount) > 100}
+                >
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'setCompareAtPriceToCostPercentage' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Update Compare-at Price Based on Cost-per-item</Text>
                 <div style={{ maxWidth: '400px' }}>
                   <TextField
                     label=""

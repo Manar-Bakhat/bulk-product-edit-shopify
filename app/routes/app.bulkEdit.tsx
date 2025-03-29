@@ -71,6 +71,11 @@ interface GraphQLResponse {
             id: string;
             price: string;
             compareAtPrice?: string | null;
+            inventoryItem?: {
+              unitCost?: {
+                amount: string;
+              } | null;
+            } | null;
           };
         }>;
       };
@@ -84,6 +89,11 @@ interface GraphQLResponse {
               id: string;
               price: string;
               compareAtPrice?: string | null;
+              inventoryItem?: {
+                unitCost?: {
+                  amount: string;
+                } | null;
+              } | null;
             };
           }>;
         };
@@ -98,6 +108,11 @@ interface GraphQLResponse {
         id: string;
         price: string;
         compareAtPrice?: string | null;
+        inventoryItem?: {
+          unitCost?: {
+            amount: string;
+          } | null;
+        } | null;
       }>;
       userErrors: Array<{
         field: string;
@@ -224,6 +239,15 @@ export async function action({ request }: ActionFunctionArgs) {
           if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
             throw new Error('Percentage must be between 0 and 100');
           }
+        } else if (editType === 'setCompareAtPriceToCostPercentage') {
+          if (!adjustmentAmount) {
+            throw new Error('Percentage is required for setting compare-at price based on cost');
+          }
+          
+          const percentage = parseFloat(adjustmentAmount);
+          if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+            throw new Error('Percentage must be between 0 and 100');
+          }
         }
 
         // Update each product's price sequentially
@@ -241,6 +265,11 @@ export async function action({ request }: ActionFunctionArgs) {
                       id
                       price
                       compareAtPrice
+                      inventoryItem {
+                        unitCost {
+                          amount
+                        }
+                      }
                     }
                   }
                 }
@@ -268,7 +297,8 @@ export async function action({ request }: ActionFunctionArgs) {
           const variants = productData.data.product.variants.edges.map(edge => ({
             id: edge.node.id,
             price: parseFloat(edge.node.price),
-            compareAtPrice: edge.node.compareAtPrice ? parseFloat(edge.node.compareAtPrice) : null
+            compareAtPrice: edge.node.compareAtPrice ? parseFloat(edge.node.compareAtPrice) : null,
+            cost: edge.node.inventoryItem?.unitCost?.amount ? parseFloat(edge.node.inventoryItem.unitCost.amount) : null
           }));
           console.log('[Price Update] Found variants:', variants);
 
@@ -404,6 +434,28 @@ export async function action({ request }: ActionFunctionArgs) {
                   newCompareAtPrice = 0;
                   console.log(`[Price Update] Compare-at price was negative, setting to 0`);
                 }
+              } else if (editType === 'setCompareAtPriceToCostPercentage') {
+                const percentage = parseFloat(adjustmentAmount);
+                const cost = variant.cost || 0;
+                
+                console.log(`[Price Update] Calculating compare-at price based on cost for variant ${variant.id}:`);
+                console.log(`[Price Update] Cost: ${cost} MAD`);
+                console.log(`[Price Update] Target percentage: ${percentage}%`);
+                
+                // Calculate the new compare-at price as a percentage of the cost
+                // Formula: Compare-at Price = Cost × (1 + Percentage / 100)
+                // Example: If cost is 30 MAD and we want 50% markup:
+                // compareAtPrice = 30 × (1 + 50/100) = 30 × 1.5 = 45 MAD
+                newCompareAtPrice = Math.round((cost * (1 + percentage / 100)) * 100) / 100;
+                
+                console.log(`[Price Update] Calculated compare-at price: ${newCompareAtPrice} MAD`);
+                console.log(`[Price Update] Verification: ${cost} × (1 + ${percentage/100}) = ${newCompareAtPrice} MAD`);
+                
+                // Ensure compare-at price doesn't go below 0
+                if (newCompareAtPrice < 0) {
+                  newCompareAtPrice = 0;
+                  console.log(`[Price Update] Compare-at price was negative, setting to 0`);
+                }
               } else {
                 newVariantPrice = parseFloat(newPrice);
               }
@@ -417,7 +469,8 @@ export async function action({ request }: ActionFunctionArgs) {
                 id: variant.id,
                 ...(editType === 'setCompareAtPrice' 
                   ? { compareAtPrice: newPrice } 
-                  : editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage' || editType === 'setCompareAtPriceToPricePercentage'
+                  : editType === 'adjustCompareAtPrice' || editType === 'adjustCompareAtPriceByPercentage' || 
+                    editType === 'setCompareAtPriceToPricePercentage' || editType === 'setCompareAtPriceToCostPercentage'
                     ? { compareAtPrice: newCompareAtPrice?.toString() || '0' }
                     : editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
                       editType === 'setPriceToCompareAtPercentage' || editType === 'setPriceToCompareAtPercentageLess'
@@ -454,10 +507,14 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         console.log('[Price Update] All products updated successfully');
-        return json({ success: true });
+        return json({ 
+          success: true,
+          message: 'Product prices updated successfully'
+        });
       } catch (error) {
         console.error('[Price Update] Detailed error:', error);
         return json({ 
+          success: false,
           error: 'Failed to update products',
           details: error instanceof Error ? error.message : 'Unknown error'
         });
