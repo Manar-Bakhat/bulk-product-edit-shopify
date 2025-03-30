@@ -281,7 +281,8 @@ export function EditPrice() {
     { label: 'Update price based on cost-per-item', value: 'setPriceToCostPercentage' },
     { label: 'Update price based on cost-per-item and shipping', value: 'setPriceToCostAndShippingPercentage' },
     { label: 'Remove compare-at price', value: 'removeCompareAtPrice' },
-    { label: 'Round price to', value: 'roundPrice' }
+    { label: 'Round price to', value: 'roundPrice' },
+    { label: 'Round compare-at price to', value: 'roundCompareAtPrice' }
   ];
 
   // Adjustment type options
@@ -463,6 +464,10 @@ export function EditPrice() {
     } else if (selectedEditOption === 'removeCompareAtPrice') {
       formData.append("editType", selectedEditOption);
     } else if (selectedEditOption === 'roundPrice') {
+      formData.append("roundingType", roundingType);
+      formData.append("roundingValue", roundingValue);
+      formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
+    } else if (selectedEditOption === 'roundCompareAtPrice') {
       formData.append("roundingType", roundingType);
       formData.append("roundingValue", roundingValue);
       formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
@@ -1052,6 +1057,48 @@ export function EditPrice() {
             {selectedEditOption === 'roundPrice' && (
               <BlockStack gap="400">
                 <Text variant="headingSm" as="h3">Round Price To</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <Select
+                    label=""
+                    options={roundingTypeOptions}
+                    value={roundingType}
+                    onChange={setRoundingType}
+                    placeholder="Select rounding type"
+                  />
+                </div>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={roundingValue}
+                    onChange={setRoundingValue}
+                    placeholder="Enter rounding value (e.g., 3 for multiples of 3)"
+                    autoComplete="off"
+                    min={1}
+                  />
+                </div>
+                <Text variant="bodySm" as="p" tone="subdued">
+                  Examples:
+                  <ul>
+                    <li>For value 3: 34.0 → 36 (upper), 31.0 → 30 (lower), 29.99 → 30 (nearest)</li>
+                    <li>For value 4: 42.99 → 40 (lower), 39.99 → 40 (nearest), 37.0 → 36 (lower)</li>
+                    <li>For value 2: 43.0 → 42 (nearest), 37.0 → 38 (nearest)</li>
+                  </ul>
+                </Text>
+                <Button 
+                  variant="primary" 
+                  onClick={handleBulkEdit} 
+                  tone="success"
+                  disabled={!roundingType || !roundingValue || parseInt(roundingValue) <= 0}
+                >
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'roundCompareAtPrice' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Round Compare-at Price To</Text>
                 <div style={{ maxWidth: '400px' }}>
                   <Select
                     label=""
