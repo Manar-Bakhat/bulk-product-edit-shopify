@@ -104,6 +104,10 @@ export function EditPrice() {
   // Add new state for shipping cost
   const [shippingCost, setShippingCost] = useState('');
   
+  // Add new state for rounding
+  const [roundingType, setRoundingType] = useState('');
+  const [roundingValue, setRoundingValue] = useState('');
+  
   // Remix hooks for form submission and data handling
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
@@ -122,6 +126,8 @@ export function EditPrice() {
     setAdjustmentAmount('');
     setSetCompareAtPriceToOriginal(false);
     setShippingCost('');
+    setRoundingType('');
+    setRoundingValue('');
   }, []); // Empty dependency array means this runs once on mount
 
   /**
@@ -274,13 +280,21 @@ export function EditPrice() {
     { label: 'Update compare-at price based on cost-per-item', value: 'setCompareAtPriceToCostPercentage' },
     { label: 'Update price based on cost-per-item', value: 'setPriceToCostPercentage' },
     { label: 'Update price based on cost-per-item and shipping', value: 'setPriceToCostAndShippingPercentage' },
-    { label: 'Remove compare-at price', value: 'removeCompareAtPrice' }
+    { label: 'Remove compare-at price', value: 'removeCompareAtPrice' },
+    { label: 'Round price to', value: 'roundPrice' }
   ];
 
   // Adjustment type options
   const adjustmentTypeOptions = [
     { label: 'Increase', value: 'increase' },
     { label: 'Decrease', value: 'decrease' }
+  ];
+
+  // Rounding type options
+  const roundingTypeOptions = [
+    { label: 'Lower', value: 'lower' },
+    { label: 'Nearest', value: 'nearest' },
+    { label: 'Upper', value: 'upper' }
   ];
 
   /**
@@ -448,6 +462,10 @@ export function EditPrice() {
       formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
     } else if (selectedEditOption === 'removeCompareAtPrice') {
       formData.append("editType", selectedEditOption);
+    } else if (selectedEditOption === 'roundPrice') {
+      formData.append("roundingType", roundingType);
+      formData.append("roundingValue", roundingValue);
+      formData.append("setCompareAtPriceToOriginal", setCompareAtPriceToOriginal.toString());
     }
 
     // Log the actual form data being sent
@@ -484,6 +502,8 @@ export function EditPrice() {
         setAdjustmentAmount('');
         setSetCompareAtPriceToOriginal(false);
         setShippingCost('');
+        setRoundingType('');
+        setRoundingValue('');
 
         // Show success message
         Swal.fire({
@@ -504,10 +524,12 @@ export function EditPrice() {
     }
   }, [actionData]);
 
-  // Reset shipping cost when component unmounts
+  // Reset shipping cost and rounding fields when component unmounts
   useEffect(() => {
     return () => {
       setShippingCost('');
+      setRoundingType('');
+      setRoundingValue('');
     };
   }, []);
 
@@ -1021,6 +1043,48 @@ export function EditPrice() {
                   variant="primary" 
                   onClick={handleBulkEdit} 
                   tone="success"
+                >
+                  Start bulk edit now
+                </Button>
+              </BlockStack>
+            )}
+
+            {selectedEditOption === 'roundPrice' && (
+              <BlockStack gap="400">
+                <Text variant="headingSm" as="h3">Round Price To</Text>
+                <div style={{ maxWidth: '400px' }}>
+                  <Select
+                    label=""
+                    options={roundingTypeOptions}
+                    value={roundingType}
+                    onChange={setRoundingType}
+                    placeholder="Select rounding type"
+                  />
+                </div>
+                <div style={{ maxWidth: '400px' }}>
+                  <TextField
+                    label=""
+                    type="number"
+                    value={roundingValue}
+                    onChange={setRoundingValue}
+                    placeholder="Enter rounding value (e.g., 3 for multiples of 3)"
+                    autoComplete="off"
+                    min={1}
+                  />
+                </div>
+                <Text variant="bodySm" as="p" tone="subdued">
+                  Examples:
+                  <ul>
+                    <li>For value 3: 34.0 → 36 (upper), 31.0 → 30 (lower), 29.99 → 30 (nearest)</li>
+                    <li>For value 4: 42.99 → 40 (lower), 39.99 → 40 (nearest), 37.0 → 36 (lower)</li>
+                    <li>For value 2: 43.0 → 42 (nearest), 37.0 → 38 (nearest)</li>
+                  </ul>
+                </Text>
+                <Button 
+                  variant="primary" 
+                  onClick={handleBulkEdit} 
+                  tone="success"
+                  disabled={!roundingType || !roundingValue || parseInt(roundingValue) <= 0}
                 >
                   Start bulk edit now
                 </Button>

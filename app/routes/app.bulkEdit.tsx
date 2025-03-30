@@ -506,6 +506,52 @@ export async function action({ request }: ActionFunctionArgs) {
                 console.log(`[Price Update] Removing compare-at price for variant ${variant.id}`);
                 // Set compare-at price to null to remove it
                 newCompareAtPrice = null;
+              } else if (editType === 'roundPrice') {
+                const roundingType = formData.get("roundingType") as string;
+                const roundingValue = parseInt(formData.get("roundingValue") as string);
+                const currentPrice = parseFloat(variant.price.toString());
+                
+                console.log(`[Price Update] Rounding price for variant ${variant.id}:`);
+                console.log(`[Price Update] Current price: ${currentPrice} MAD`);
+                console.log(`[Price Update] Rounding type: ${roundingType}`);
+                console.log(`[Price Update] Rounding value: ${roundingValue}`);
+                
+                // Get the integer part of the price
+                const integerPart = Math.floor(currentPrice);
+                
+                // Calculate the new price based on rounding type
+                let roundedPrice: number;
+                switch (roundingType) {
+                  case 'upper':
+                    // Find the next multiple of roundingValue
+                    // Formula: ⌈integerPart/roundingValue⌉ × roundingValue
+                    roundedPrice = Math.ceil(integerPart / roundingValue) * roundingValue;
+                    break;
+                  case 'lower':
+                    // Find the previous multiple of roundingValue
+                    // Formula: ⌊integerPart/roundingValue⌋ × roundingValue
+                    roundedPrice = Math.floor(integerPart / roundingValue) * roundingValue;
+                    break;
+                  case 'nearest':
+                    // Find the nearest multiple of roundingValue
+                    // Formula: round(integerPart/roundingValue) × roundingValue
+                    roundedPrice = Math.round(integerPart / roundingValue) * roundingValue;
+                    break;
+                  default:
+                    roundedPrice = currentPrice;
+                }
+                
+                console.log(`[Price Update] Rounded price: ${roundedPrice} MAD`);
+                console.log(`[Price Update] Verification: ${currentPrice} rounded ${roundingType} to multiples of ${roundingValue} = ${roundedPrice}`);
+                
+                // Ensure price doesn't go below 0
+                if (roundedPrice < 0) {
+                  roundedPrice = 0;
+                  console.log(`[Price Update] Price was negative, setting to 0`);
+                }
+
+                // Set the new price
+                newVariantPrice = roundedPrice;
               } else {
                 newVariantPrice = parseFloat(newPrice);
               }
@@ -524,6 +570,8 @@ export async function action({ request }: ActionFunctionArgs) {
                     ? { compareAtPrice: newCompareAtPrice?.toString() || '0' }
                     : editType === 'removeCompareAtPrice'
                     ? { compareAtPrice: null }
+                    : editType === 'roundPrice'
+                    ? { price: newVariantPrice.toString() }
                     : editType === 'adjustPrice' || editType === 'adjustPriceByPercentage' || 
                       editType === 'setPriceToCompareAtPercentage' || editType === 'setPriceToCompareAtPercentageLess'
                       ? {
