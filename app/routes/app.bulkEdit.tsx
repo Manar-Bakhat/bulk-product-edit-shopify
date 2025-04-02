@@ -37,6 +37,7 @@ import { Sidebar } from "../components/Sidebar";
 import { EditTitle } from "../components/EditTitle";
 import { EditPrice } from "../components/EditPrice";
 import { EditVendor } from "../components/EditVendor";
+import { EditDescription } from "../components/EditDescription";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
@@ -45,6 +46,7 @@ import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { handlePriceEdit } from "../services/priceEditService";
 import { handleTitleEdit } from "../services/titleEditService";
 import { handleVendorEdit } from "../services/vendorEditService";
+import { handleDescriptionEdit } from "../services/descriptionEditService";
 
 interface Product {
   id: string;
@@ -187,6 +189,8 @@ export async function action({ request }: ActionFunctionArgs) {
       return handleTitleEdit(request, formData);
     } else if (section === "vendor") {
       return handleVendorEdit(request, formData);
+    } else if (section === "description") {
+      return handleDescriptionEdit(request, formData);
     }
   }
 
@@ -388,7 +392,7 @@ export default function BulkEdit() {
     setActiveSection(section);
     if (section === "home") {
       navigate("/app/dashboard");
-    } else if (section === "title" || section === "price" || section === "vendor") {
+    } else if (section === "title" || section === "price" || section === "vendor" || section === "description") {
       navigate(`/app/bulkEdit?section=${section}`);
     }
   };
@@ -409,6 +413,8 @@ export default function BulkEdit() {
         return renderPriceContent();
       case "vendor":
         return <EditVendor />;
+      case "description":
+        return <EditDescription />;
       default:
         return null;
     }

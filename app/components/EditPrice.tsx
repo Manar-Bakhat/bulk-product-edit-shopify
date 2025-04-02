@@ -353,7 +353,8 @@ export function EditPrice() {
         title: 'Error',
         text: 'Please filter and preview products first before starting bulk edit',
         icon: 'error',
-        confirmButtonText: 'OK'
+        confirmButtonText: 'OK',
+        confirmButtonColor: "#008060"
       });
       return;
     }
@@ -367,7 +368,8 @@ export function EditPrice() {
           title: 'Error',
           text: 'Please enter a valid adjustment amount',
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
         return;
       }
@@ -381,7 +383,8 @@ export function EditPrice() {
           title: 'Error',
           text: 'Please enter a percentage value',
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
         return;
       }
@@ -393,7 +396,8 @@ export function EditPrice() {
           title: 'Error',
           text: 'Please enter a valid percentage between 0 and 100',
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
         return;
       }
@@ -405,7 +409,8 @@ export function EditPrice() {
           title: 'Error',
           text: 'Please enter a valid price',
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
         return;
       }
@@ -515,7 +520,8 @@ export function EditPrice() {
           title: 'Success!',
           text: actionData.message || 'Product prices updated successfully!',
           icon: 'success',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
       } else if (actionData.error) {
         console.error('[EditPrice] Bulk edit failed:', actionData.error);
@@ -523,7 +529,8 @@ export function EditPrice() {
           title: 'Error',
           text: actionData.error,
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
       }
     }

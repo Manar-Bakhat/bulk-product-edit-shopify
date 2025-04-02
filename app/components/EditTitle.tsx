@@ -308,7 +308,8 @@ export function EditTitle() {
         title: 'Error',
         text: 'Please filter and preview products first before starting bulk edit',
         icon: 'error',
-        confirmButtonText: 'OK'
+        confirmButtonText: 'OK',
+        confirmButtonColor: "#008060"
       });
       return;
     }
@@ -320,7 +321,8 @@ export function EditTitle() {
           title: 'Error',
           text: 'Please enter both text to find and replacement text',
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
         return;
       }
@@ -331,7 +333,8 @@ export function EditTitle() {
           title: 'Error',
           text: 'Please enter a valid number of characters',
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
         return;
       }
@@ -342,7 +345,8 @@ export function EditTitle() {
         title: 'Error',
         text: 'Please enter text to add',
         icon: 'error',
-        confirmButtonText: 'OK'
+        confirmButtonText: 'OK',
+        confirmButtonColor: "#008060"
       });
       return;
     }
@@ -358,7 +362,8 @@ export function EditTitle() {
           title: 'Error',
           text: 'Text not found in any of the filtered products',
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
         return;
       }
@@ -408,7 +413,8 @@ export function EditTitle() {
           title: 'Error',
           text: 'Text to replace not found in any of the filtered products',
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
         return;
       }
@@ -489,7 +495,8 @@ export function EditTitle() {
           title: 'Success!',
           text: 'Product titles updated successfully!',
           icon: 'success',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
       } else if (actionData.error) {
         console.error('[EditTitle] Bulk edit failed:', actionData.error);
@@ -497,7 +504,8 @@ export function EditTitle() {
           title: 'Error',
           text: actionData.error,
           icon: 'error',
-          confirmButtonText: 'OK'
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
         });
       }
     }

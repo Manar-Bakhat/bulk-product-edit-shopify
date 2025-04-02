@@ -1,10 +1,6 @@
 /**
- * EditVendor Component
- * This component handles bulk editing of product vendors.
- * It provides functionality to:
- * 1. Filter products based on various criteria
- * 2. Preview filtered products
- * 3. Edit product vendors in bulk
+ * EditDescription Component
+ * This component handles bulk editing of product descriptions.
  * 
  * @author Manar Bakhat
  */
@@ -27,9 +23,9 @@ import {
   Pagination,
   Divider
 } from "@shopify/polaris";
-import { FilterIcon, ResetIcon, EditIcon } from '@shopify/polaris-icons';
-import { useSubmit, useActionData, useLoaderData, useSearchParams } from "@remix-run/react";
-import Swal from 'sweetalert2';
+import { FilterIcon, ResetIcon } from '@shopify/polaris-icons';
+import { useSubmit, useActionData, useLoaderData } from "@remix-run/react";
+import Swal from "sweetalert2";
 
 interface Product {
   id: string;
@@ -60,45 +56,21 @@ interface ActionData {
   };
   error?: string;
   success?: boolean;
-  message?: string;
 }
 
-export function EditVendor() {
-  const [searchParams] = useSearchParams();
-  const currentSection = searchParams.get("section");
-
+export function EditDescription() {
   const [selectedField, setSelectedField] = useState('title');
   const [selectedCondition, setSelectedCondition] = useState('contains');
   const [filterValue, setFilterValue] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
-
-  // Add new state for vendor editing
-  const [selectedEditOption, setSelectedEditOption] = useState('');
-  const [newVendor, setNewVendor] = useState('');
-  const [capitalizationType, setCapitalizationType] = useState('titleCase');
-
-  // Remix hooks for form submission and data handling
+  const [descriptionPosition, setDescriptionPosition] = useState('');
+  const [textToAdd, setTextToAdd] = useState('');
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
-
-  // Reset all states when section changes
-  useEffect(() => {
-    if (currentSection === "vendor") {
-      setSelectedField('title');
-      setSelectedCondition('contains');
-      setFilterValue('');
-      setHasSearched(false);
-      setProducts([]);
-      setCurrentPage(1);
-      setSelectedEditOption('');
-      setNewVendor('');
-      setCapitalizationType('titleCase');
-    }
-  }, [currentSection]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   // Handle filtered products
   useEffect(() => {
@@ -118,6 +90,22 @@ export function EditVendor() {
         setHasSearched(true);
       }
       setIsLoading(false);
+    }
+  }, [actionData]);
+
+  // Handle success response and reset form
+  useEffect(() => {
+    if (actionData?.success) {
+      console.log('[EditDescription] Success response received, resetting form');
+      // Reset form fields
+      setTextToAdd('');
+      setDescriptionPosition('');
+      setProducts([]);
+      setHasSearched(false);
+      setSelectedField('title');
+      setSelectedCondition('contains');
+      setFilterValue('');
+      setCurrentPage(1);
     }
   }, [actionData]);
 
@@ -251,8 +239,6 @@ export function EditVendor() {
     formData.append("field", selectedField);
     formData.append("condition", selectedCondition);
     formData.append("value", filterValue);
-    formData.append("section", "vendor");
-    formData.append("currentSection", "vendor");
     submit(formData, { method: "post" });
   };
 
@@ -264,117 +250,64 @@ export function EditVendor() {
     setProducts([]);
   };
 
-  // Add vendor edit options
-  const editOptions = [
-    { label: 'Update vendor', value: 'updateVendor' },
-    { label: 'Change Vendor Capitalization', value: 'capitalizeVendor' }
-  ];
+  const handleBulkEdit = async () => {
+    if (!textToAdd.trim()) return;
 
-  // Add capitalization options
-  const capitalizationOptions = [
-    { label: 'First Letter Of Each Word Is Uppercase', value: 'titleCase' },
-    { label: 'UPPERCASE', value: 'uppercase' },
-    { label: 'lowercase', value: 'lowercase' },
-    { label: 'First letter of vendor uppercase', value: 'firstLetter' }
-  ];
-
-  /**
-   * Effect to handle successful bulk edit
-   * Shows success message and resets form
-   */
-  useEffect(() => {
-    if (actionData) {
-      console.log('[EditVendor] Received action data:', actionData);
-      
-      if (actionData.success) {
-        console.log('[EditVendor] Bulk edit successful!');
-        // Reset form fields
-        setSelectedEditOption('');
-        setNewVendor('');
-        setCapitalizationType('titleCase');
-
-        // Show success message
-        Swal.fire({
-          title: 'Success!',
-          text: actionData.message || 'Vendors updated successfully!',
-          icon: 'success',
-          confirmButtonText: 'OK',
-          confirmButtonColor: "#008060"
-        }).then(() => {
-          // Refresh the page to show updated data
-          window.location.reload();
-        });
-      } else if (actionData.error) {
-        console.error('[EditVendor] Bulk edit failed:', actionData.error);
-        Swal.fire({
-          title: 'Error',
-          text: actionData.error,
-          icon: 'error',
-          confirmButtonText: 'OK',
-          confirmButtonColor: "#008060"
-        });
-      }
-    }
-  }, [actionData]);
-
-  /**
-   * Handles bulk vendor editing
-   * Submits edit criteria to the server
-   */
-  const handleBulkEdit = () => {
-    console.log('[EditVendor] Starting bulk edit process');
-    
-    // Check if products have been filtered first
-    if (!hasSearched || products.length === 0) {
-      console.log('[EditVendor] No products selected');
+    if (!products.length) {
       Swal.fire({
-        title: 'Error',
-        text: 'Please filter and preview products first before starting bulk edit',
-        icon: 'error',
-        confirmButtonText: 'OK',
+        title: "Error",
+        text: "Please filter and preview products first before starting bulk edit",
+        icon: "error",
+        confirmButtonText: "OK",
         confirmButtonColor: "#008060"
       });
       return;
     }
 
-    // Validate inputs based on edit type
-    if (selectedEditOption === 'updateVendor' && !newVendor.trim()) {
-      console.log('[EditVendor] No vendor name provided');
-      Swal.fire({
-        title: 'Error',
-        text: 'Please enter a new vendor name',
-        icon: 'error',
-        confirmButtonText: 'OK',
-        confirmButtonColor: "#008060"
-      });
-      return;
-    }
-
-    console.log('[EditVendor] Preparing form data:', {
-      productIds: products.map(p => p.id),
-      productVendors: products.reduce((acc, p) => ({ ...acc, [p.id]: p.vendor }), {}),
-      newVendor,
-      editType: selectedEditOption,
-      capitalizationType
+    console.log('Starting bulk edit with:', {
+      products: products.map(p => p.id),
+      text: textToAdd,
+      position: descriptionPosition
     });
 
-    const productIds = products.map(product => product.id);
-    const productVendors = products.reduce((acc, product) => {
-      acc[product.id] = product.vendor;
-      return acc;
-    }, {} as Record<string, string>);
-
     const formData = new FormData();
+    products.forEach(product => {
+      formData.append("productIds[]", product.id);
+    });
+    formData.append("text", textToAdd);
+    formData.append("position", descriptionPosition);
     formData.append("actionType", "bulkEdit");
-    formData.append("section", "vendor");
-    formData.append("productIds", JSON.stringify(productIds));
-    formData.append("productVendors", JSON.stringify(productVendors));
-    formData.append("newVendor", newVendor);
-    formData.append("editType", selectedEditOption);
-    formData.append("capitalizationType", capitalizationType);
+    formData.append("section", "description");
 
-    console.log('[EditVendor] Submitting form data...');
-    submit(formData, { method: "post" });
+    try {
+      console.log('Submitting form data:', {
+        productIds: products.map(p => p.id),
+        text: textToAdd,
+        position: descriptionPosition
+      });
+
+      await submit(formData, { method: "post" });
+      
+      console.log('Bulk edit completed successfully');
+      
+      // Show success message
+      Swal.fire({
+        title: "Success!",
+        text: `Successfully updated ${products.length} product descriptions`,
+        icon: "success",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#008060"
+      });
+    } catch (error) {
+      console.error("Error updating descriptions:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to update descriptions. Please try again.",
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#008060"
+      });
+    }
   };
 
   return (
@@ -413,6 +346,7 @@ export function EditVendor() {
                 options={fieldOptions}
                 value={selectedField}
                 onChange={handleFieldChange}
+                placeholder="Select an option"
               />
               <Select
                 label=""
@@ -504,64 +438,44 @@ export function EditVendor() {
         </InlineStack>
       </BlockStack>
 
-      {/* Edit Section */}
+      {/* Description Position Selection */}
       <Card>
         <BlockStack gap="400">
-          <InlineStack align="space-between" blockAlign="center">
-            <InlineStack gap="300" blockAlign="center">
-              <Icon source={EditIcon} tone="success" />
-              <Text variant="headingSm" as="h2">Edit Vendors</Text>
-            </InlineStack>
-          </InlineStack>
-          <Divider />
-
-          <BlockStack gap="400">
-            <Select
-              label=""
-              options={editOptions}
-              value={selectedEditOption}
-              onChange={setSelectedEditOption}
-              placeholder="Select an option"
-            />
-            
-            {selectedEditOption === 'updateVendor' && (
-              <BlockStack gap="400">
-                <Text variant="headingSm" as="h3">Update Vendor To</Text>
-                <div style={{ maxWidth: '400px' }}>
-                  <TextField
-                    label=""
-                    value={newVendor}
-                    onChange={setNewVendor}
-                    placeholder="Enter new vendor name"
-                    autoComplete="off"
-                  />
-                </div>
-                <Button variant="primary" onClick={handleBulkEdit} tone="success">
-                  Start bulk edit now
-                </Button>
-              </BlockStack>
-            )}
-
-            {selectedEditOption === 'capitalizeVendor' && (
-              <BlockStack gap="400">
-                <Text variant="headingSm" as="h3">Change Vendor Capitalization</Text>
-                <div style={{ maxWidth: '400px' }}>
-                  <Select
-                    label=""
-                    options={capitalizationOptions}
-                    value={capitalizationType}
-                    onChange={setCapitalizationType}
-                    placeholder="Select capitalization type"
-                  />
-                </div>
-                <Button variant="primary" onClick={handleBulkEdit} tone="success">
-                  Start bulk edit now
-                </Button>
-              </BlockStack>
-            )}
-          </BlockStack>
+          <Text variant="headingSm" as="h2">Select Description Position</Text>
+          <Select
+            label=""
+            options={[
+              { label: 'Add text to the beginning of the description', value: 'beginning' },
+              { label: 'Add text to the end of the description', value: 'end' }
+            ]}
+            value={descriptionPosition}
+            onChange={setDescriptionPosition}
+            placeholder="Select an option"
+          />
+          
+          {descriptionPosition && (
+            <BlockStack gap="400">
+              <TextField
+                label={descriptionPosition === 'beginning' ? "Text to add at the beginning" : "Text to add at the end"}
+                value={textToAdd}
+                onChange={setTextToAdd}
+                multiline={4}
+                autoComplete="off"
+                placeholder={`Enter the text you want to add ${descriptionPosition === 'beginning' ? 'at the beginning' : 'to the end'} of the description...`}
+              />
+              <Button 
+                variant="primary" 
+                tone="success"
+                onClick={handleBulkEdit}
+                disabled={!textToAdd.trim()}
+              >
+                Start Bulk Edit Now
+              </Button>
+            </BlockStack>
+          )}
         </BlockStack>
       </Card>
+
     </BlockStack>
   );
 } 

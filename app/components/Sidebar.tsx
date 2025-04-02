@@ -18,7 +18,9 @@ import {
   HomeIcon,
   TextAlignCenterIcon,
   CashDollarIcon,
-  StoreIcon
+  StoreIcon,
+  EditIcon,
+  FileIcon
 } from '@shopify/polaris-icons';
 
 interface SidebarSection {
@@ -91,6 +93,12 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           icon: StoreIcon,
           label: 'Edit Vendor',
           sectionId: 'vendor'
+        },
+        {
+          id: 'description',
+          icon: FileIcon,
+          label: 'Edit Description',
+          sectionId: 'description'
         }
       ]
     }
