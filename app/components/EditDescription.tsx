@@ -93,21 +93,36 @@ export function EditDescription() {
     }
   }, [actionData]);
 
-  // Handle success response and reset form
+  // Add useEffect to handle successful updates
   useEffect(() => {
-    if (actionData?.success) {
-      console.log('[EditDescription] Success response received, resetting form');
-      // Reset form fields
-      setTextToAdd('');
-      setDescriptionPosition('');
-      setProducts([]);
-      setHasSearched(false);
-      setSelectedField('title');
-      setSelectedCondition('contains');
-      setFilterValue('');
-      setCurrentPage(1);
+    if (actionData) {
+      console.log('Action data received:', actionData);
+      
+      if (actionData.success) {
+        // Only reset step 2 fields (description editing)
+        setTextToAdd('');
+        setDescriptionPosition('');
+        
+        // Show success message
+        Swal.fire({
+          title: "Success!",
+          text: `Successfully updated ${products.length} product descriptions`,
+          icon: "success",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#008060"
+        });
+      } else if (actionData.error) {
+        // Show error message
+        Swal.fire({
+          title: "Error!",
+          text: actionData.error,
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#008060"
+        });
+      }
     }
-  }, [actionData]);
+  }, [actionData, products.length]);
 
   // Calculate pagination
   const totalPages = Math.ceil(products.length / itemsPerPage);
@@ -289,15 +304,6 @@ export function EditDescription() {
       await submit(formData, { method: "post" });
       
       console.log('Bulk edit completed successfully');
-      
-      // Show success message
-      Swal.fire({
-        title: "Success!",
-        text: `Successfully updated ${products.length} product descriptions`,
-        icon: "success",
-        confirmButtonText: "OK",
-        confirmButtonColor: "#008060"
-      });
     } catch (error) {
       console.error("Error updating descriptions:", error);
       Swal.fire({
