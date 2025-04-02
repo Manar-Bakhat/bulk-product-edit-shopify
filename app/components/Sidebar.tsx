@@ -17,7 +17,8 @@ import {
 import {
   HomeIcon,
   TextAlignCenterIcon,
-  CashDollarIcon
+  CashDollarIcon,
+  StoreIcon
 } from '@shopify/polaris-icons';
 
 interface SidebarSection {
@@ -84,6 +85,12 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           icon: CashDollarIcon,
           label: 'Edit Price',
           sectionId: 'price'
+        },
+        {
+          id: 'vendor',
+          icon: StoreIcon,
+          label: 'Edit Vendor',
+          sectionId: 'vendor'
         }
       ]
     }
