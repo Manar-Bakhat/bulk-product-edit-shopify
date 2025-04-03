@@ -7,21 +7,26 @@ import { json } from "@remix-run/node";
 export async function handleDescriptionEdit(request: Request, formData: FormData) {
   console.log('[DescriptionEditService] Starting description edit process');
   const { admin } = await authenticate.admin(request);
-  const productIds = formData.getAll("productIds[]") as string[];
-  const textToAdd = formData.get("text") as string;
+  const productIds = JSON.parse(formData.get("productIds") as string);
+  const productDescriptions = JSON.parse(formData.get("productDescriptions") as string);
+  const textToAdd = formData.get("textToAdd") as string;
+  const textToRemove = formData.get("textToRemove") as string;
   const position = formData.get("position") as string;
+  const editType = formData.get("editType") as string;
 
   console.log('[DescriptionEditService] Input data:', {
     productIds,
     textToAdd,
-    position
+    textToRemove,
+    position,
+    editType
   });
 
   try {
     // Update each product's description
     for (const productId of productIds) {
       console.log(`[DescriptionEditService] Processing product ${productId}`);
-      await updateProductDescription(admin, productId, textToAdd, position);
+      await updateProductDescription(admin, productId, productDescriptions[productId], textToAdd, textToRemove, position, editType);
     }
 
     console.log('[DescriptionEditService] All products updated successfully');
@@ -35,12 +40,15 @@ export async function handleDescriptionEdit(request: Request, formData: FormData
 async function updateProductDescription(
   admin: any,
   productId: string,
+  currentDescription: string,
   textToAdd: string,
-  position: string
+  textToRemove: string,
+  position: string,
+  editType: string
 ) {
   console.log(`[DescriptionEditService] Updating description for product ${productId}`);
   
-  // First, get the current product description
+  // First, get the current product description HTML
   const getProductQuery = `#graphql
     query {
       product(id: "gid://shopify/Product/${productId}") {
@@ -59,21 +67,25 @@ async function updateProductDescription(
     throw new Error(`GraphQL errors: ${JSON.stringify(productData.errors)}`);
   }
 
-  const currentDescription = productData.data?.product?.descriptionHtml || '';
-  console.log('[DescriptionEditService] Current description:', currentDescription);
+  const currentDescriptionHtml = productData.data?.product?.descriptionHtml || '';
+  console.log('[DescriptionEditService] Current description HTML:', currentDescriptionHtml);
 
-  let newDescription = currentDescription;
+  let newDescriptionHtml = currentDescriptionHtml;
 
-  // Update description based on position
-  if (position === 'beginning') {
-    newDescription = `${textToAdd} ${currentDescription}`;
-  } else if (position === 'end') {
-    newDescription = `${currentDescription} ${textToAdd}`;
+  if (editType === 'remove') {
+    // Create a case-insensitive regex pattern for removal
+    const regex = new RegExp(textToRemove, 'gi');
+    // Remove the text from the HTML content
+    newDescriptionHtml = currentDescriptionHtml.replace(regex, '').trim();
+  } else {
+    // Handle adding text based on position
+    if (position === 'beginning') {
+      newDescriptionHtml = `${textToAdd} ${currentDescriptionHtml}`;
+    } else if (position === 'end') {
+      newDescriptionHtml = `${currentDescriptionHtml} ${textToAdd}`;
+    }
   }
 
-  console.log('[DescriptionEditService] New description:', newDescription);
-
-  // Update the product with new description
   const mutation = `#graphql
     mutation productUpdate($input: ProductInput!) {
       productUpdate(input: $input) {
@@ -92,7 +104,7 @@ async function updateProductDescription(
   const variables = {
     input: {
       id: `gid://shopify/Product/${productId}`,
-      descriptionHtml: newDescription
+      descriptionHtml: newDescriptionHtml
     }
   };
 

@@ -95,7 +95,9 @@ export default function Dashboard() {
    */
   const handleSectionChange = (section: string) => {
     setActiveSection(section);
-    if (section === "title" || section === "price") {
+    if (section === "home") {
+      return;
+    } else {
       navigate(`/app/bulkEdit?section=${section}`);
     }
   };

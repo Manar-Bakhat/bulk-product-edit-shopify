@@ -67,6 +67,7 @@ export function EditDescription() {
   const [hasSearched, setHasSearched] = useState(false);
   const [descriptionPosition, setDescriptionPosition] = useState('');
   const [textToAdd, setTextToAdd] = useState('');
+  const [textToRemove, setTextToRemove] = useState('');
   const submit = useSubmit();
   const actionData = useActionData<ActionData>();
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,6 +102,7 @@ export function EditDescription() {
       if (actionData.success) {
         // Only reset step 2 fields (description editing)
         setTextToAdd('');
+        setTextToRemove('');
         setDescriptionPosition('');
         
         // Show success message
@@ -266,54 +268,103 @@ export function EditDescription() {
   };
 
   const handleBulkEdit = async () => {
-    if (!textToAdd.trim()) return;
-
-    if (!products.length) {
+    // Check if products have been filtered first
+    if (!hasSearched || products.length === 0) {
       Swal.fire({
-        title: "Error",
-        text: "Please filter and preview products first before starting bulk edit",
-        icon: "error",
-        confirmButtonText: "OK",
+        title: 'Error',
+        text: 'Please filter and preview products first before starting bulk edit',
+        icon: 'error',
+        confirmButtonText: 'OK',
         confirmButtonColor: "#008060"
       });
       return;
     }
 
-    console.log('Starting bulk edit with:', {
-      products: products.map(p => p.id),
-      text: textToAdd,
-      position: descriptionPosition
-    });
+    // Validate inputs based on edit type
+    if (descriptionPosition === 'remove') {
+      if (!textToRemove.trim()) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Please enter text to remove',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
+        });
+        return;
+      }
+
+      // Check if text exists in any product description
+      const productsWithText = products.filter(product => 
+        product.description && product.description.toLowerCase().includes(textToRemove.toLowerCase())
+      );
+
+      if (productsWithText.length === 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Text not found in any of the filtered products',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
+        });
+        return;
+      }
+
+      // If text exists in some products, show confirmation dialog
+      if (productsWithText.length < products.length) {
+        Swal.fire({
+          title: 'Warning',
+          text: `The text "${textToRemove}" was found in ${productsWithText.length} out of ${products.length} products. Do you want to continue?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, continue',
+          cancelButtonText: 'No, cancel'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Continue with the bulk edit
+            const productIds = productsWithText.map(product => product.id);
+            const productDescriptions = productsWithText.reduce((acc, product) => {
+              acc[product.id] = product.description;
+              return acc;
+            }, {} as Record<string, string>);
 
     const formData = new FormData();
-    products.forEach(product => {
-      formData.append("productIds[]", product.id);
-    });
-    formData.append("text", textToAdd);
-    formData.append("position", descriptionPosition);
     formData.append("actionType", "bulkEdit");
     formData.append("section", "description");
-
-    try {
-      console.log('Submitting form data:', {
-        productIds: products.map(p => p.id),
-        text: textToAdd,
-        position: descriptionPosition
-      });
-
-      await submit(formData, { method: "post" });
-      
-      console.log('Bulk edit completed successfully');
-    } catch (error) {
-      console.error("Error updating descriptions:", error);
+            formData.append("productIds", JSON.stringify(productIds));
+            formData.append("productDescriptions", JSON.stringify(productDescriptions));
+            formData.append("textToRemove", textToRemove);
+            formData.append("editType", "remove");
+            formData.append("position", descriptionPosition);
+            submit(formData, { method: "post" });
+          }
+        });
+        return;
+      }
+    } else if (!textToAdd.trim()) {
       Swal.fire({
-        title: "Error!",
-        text: "Failed to update descriptions. Please try again.",
-        icon: "error",
-        confirmButtonText: "OK",
+        title: 'Error',
+        text: 'Please enter text to add',
+        icon: 'error',
+        confirmButtonText: 'OK',
         confirmButtonColor: "#008060"
       });
+      return;
     }
+
+    const productIds = products.map(product => product.id);
+    const productDescriptions = products.reduce((acc, product) => {
+      acc[product.id] = product.description;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const formData = new FormData();
+    formData.append("actionType", "bulkEdit");
+    formData.append("section", "description");
+    formData.append("productIds", JSON.stringify(productIds));
+    formData.append("productDescriptions", JSON.stringify(productDescriptions));
+    formData.append("textToAdd", textToAdd);
+    formData.append("position", descriptionPosition);
+    submit(formData, { method: "post" });
   };
 
   return (
@@ -452,7 +503,8 @@ export function EditDescription() {
             label=""
             options={[
               { label: 'Add text to the beginning of the description', value: 'beginning' },
-              { label: 'Add text to the end of the description', value: 'end' }
+              { label: 'Add text to the end of the description', value: 'end' },
+              { label: 'Find and remove text from description', value: 'remove' }
             ]}
             value={descriptionPosition}
             onChange={setDescriptionPosition}
@@ -461,6 +513,16 @@ export function EditDescription() {
           
           {descriptionPosition && (
             <BlockStack gap="400">
+              {descriptionPosition === 'remove' ? (
+                <TextField
+                  label="Text to remove"
+                  value={textToRemove}
+                  onChange={setTextToRemove}
+                  multiline={4}
+                  autoComplete="off"
+                  placeholder="Enter the text you want to remove from the description..."
+                />
+              ) : (
               <TextField
                 label={descriptionPosition === 'beginning' ? "Text to add at the beginning" : "Text to add at the end"}
                 value={textToAdd}
@@ -469,11 +531,12 @@ export function EditDescription() {
                 autoComplete="off"
                 placeholder={`Enter the text you want to add ${descriptionPosition === 'beginning' ? 'at the beginning' : 'to the end'} of the description...`}
               />
+              )}
               <Button 
                 variant="primary" 
                 tone="success"
                 onClick={handleBulkEdit}
-                disabled={!textToAdd.trim()}
+                disabled={!textToAdd.trim() && !textToRemove.trim()}
               >
                 Start Bulk Edit Now
               </Button>

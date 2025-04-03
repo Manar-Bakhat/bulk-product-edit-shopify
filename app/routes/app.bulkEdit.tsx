@@ -375,10 +375,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function BulkEdit() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
-  const [activeSection, setActiveSection] = useState("title");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const section = searchParams.get("section") || "title";
+  const [activeSection, setActiveSection] = useState(section);
 
   useEffect(() => {
     setActiveSection(section);
@@ -388,12 +388,11 @@ export default function BulkEdit() {
     setIsSidebarExpanded(expanded);
   };
 
-  const handleSectionChange = (section: string) => {
-    setActiveSection(section);
-    if (section === "home") {
+  const handleSectionChange = (newSection: string) => {
+    if (newSection === "home") {
       navigate("/app/dashboard");
-    } else if (section === "title" || section === "price" || section === "vendor" || section === "description") {
-      navigate(`/app/bulkEdit?section=${section}`);
+    } else {
+      navigate(`/app/bulkEdit?section=${newSection}`, { replace: true });
     }
   };
 
@@ -412,9 +411,9 @@ export default function BulkEdit() {
       case "price":
         return renderPriceContent();
       case "vendor":
-        return <EditVendor />;
+        return <EditVendor key={section} />;
       case "description":
-        return <EditDescription />;
+        return <EditDescription key={section} />;
       default:
         return null;
     }
