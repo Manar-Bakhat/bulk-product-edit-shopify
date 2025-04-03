@@ -327,9 +327,9 @@ export function EditDescription() {
               return acc;
             }, {} as Record<string, string>);
 
-    const formData = new FormData();
-    formData.append("actionType", "bulkEdit");
-    formData.append("section", "description");
+            const formData = new FormData();
+            formData.append("actionType", "bulkEdit");
+            formData.append("section", "description");
             formData.append("productIds", JSON.stringify(productIds));
             formData.append("productDescriptions", JSON.stringify(productDescriptions));
             formData.append("textToRemove", textToRemove);
@@ -340,6 +340,103 @@ export function EditDescription() {
         });
         return;
       }
+      
+      // If text exists in all products, proceed with the removal
+      const productIds = products.map(product => product.id);
+      const productDescriptions = products.reduce((acc, product) => {
+        acc[product.id] = product.description;
+        return acc;
+      }, {} as Record<string, string>);
+
+      const formData = new FormData();
+      formData.append("actionType", "bulkEdit");
+      formData.append("section", "description");
+      formData.append("productIds", JSON.stringify(productIds));
+      formData.append("productDescriptions", JSON.stringify(productDescriptions));
+      formData.append("textToRemove", textToRemove);
+      formData.append("editType", "remove");
+      formData.append("position", descriptionPosition);
+      submit(formData, { method: "post" });
+      return;
+    } else if (descriptionPosition === 'replace') {
+      if (!textToRemove.trim() || !textToAdd.trim()) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Please enter both find text and replacement text',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
+        });
+        return;
+      }
+
+      // Check if text exists in any product description
+      const productsWithText = products.filter(product => 
+        product.description && product.description.toLowerCase().includes(textToRemove.toLowerCase())
+      );
+
+      if (productsWithText.length === 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'Text to find not found in any of the filtered products',
+          icon: 'error',
+          confirmButtonText: 'OK',
+          confirmButtonColor: "#008060"
+        });
+        return;
+      }
+
+      // If text exists in some products, show confirmation dialog
+      if (productsWithText.length < products.length) {
+        Swal.fire({
+          title: 'Warning',
+          text: `The text "${textToRemove}" was found in ${productsWithText.length} out of ${products.length} products. Do you want to continue?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, continue',
+          cancelButtonText: 'No, cancel'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Continue with the bulk edit
+            const productIds = productsWithText.map(product => product.id);
+            const productDescriptions = productsWithText.reduce((acc, product) => {
+              acc[product.id] = product.description;
+              return acc;
+            }, {} as Record<string, string>);
+
+            const formData = new FormData();
+            formData.append("actionType", "bulkEdit");
+            formData.append("section", "description");
+            formData.append("productIds", JSON.stringify(productIds));
+            formData.append("productDescriptions", JSON.stringify(productDescriptions));
+            formData.append("textToRemove", textToRemove);
+            formData.append("textToAdd", textToAdd);
+            formData.append("editType", "replace");
+            formData.append("position", descriptionPosition);
+            submit(formData, { method: "post" });
+          }
+        });
+        return;
+      }
+      
+      // If text exists in all products, proceed with the replacement
+      const productIds = products.map(product => product.id);
+      const productDescriptions = products.reduce((acc, product) => {
+        acc[product.id] = product.description;
+        return acc;
+      }, {} as Record<string, string>);
+
+      const formData = new FormData();
+      formData.append("actionType", "bulkEdit");
+      formData.append("section", "description");
+      formData.append("productIds", JSON.stringify(productIds));
+      formData.append("productDescriptions", JSON.stringify(productDescriptions));
+      formData.append("textToRemove", textToRemove);
+      formData.append("textToAdd", textToAdd);
+      formData.append("editType", "replace");
+      formData.append("position", descriptionPosition);
+      submit(formData, { method: "post" });
+      return;
     } else if (!textToAdd.trim()) {
       Swal.fire({
         title: 'Error',
@@ -363,6 +460,7 @@ export function EditDescription() {
     formData.append("productIds", JSON.stringify(productIds));
     formData.append("productDescriptions", JSON.stringify(productDescriptions));
     formData.append("textToAdd", textToAdd);
+    formData.append("editType", descriptionPosition === "beginning" ? "addBeginning" : "addEnd");
     formData.append("position", descriptionPosition);
     submit(formData, { method: "post" });
   };
@@ -504,7 +602,8 @@ export function EditDescription() {
             options={[
               { label: 'Add text to the beginning of the description', value: 'beginning' },
               { label: 'Add text to the end of the description', value: 'end' },
-              { label: 'Find and remove text from description', value: 'remove' }
+              { label: 'Find and remove text from description', value: 'remove' },
+              { label: 'Find and replace text in description', value: 'replace' }
             ]}
             value={descriptionPosition}
             onChange={setDescriptionPosition}
@@ -522,21 +621,44 @@ export function EditDescription() {
                   autoComplete="off"
                   placeholder="Enter the text you want to remove from the description..."
                 />
+              ) : descriptionPosition === 'replace' ? (
+                <>
+                  <TextField
+                    label="Find text"
+                    value={textToRemove}
+                    onChange={setTextToRemove}
+                    multiline={4}
+                    autoComplete="off"
+                    placeholder="Enter the text you want to find in the description..."
+                  />
+                  <TextField
+                    label="Replace with"
+                    value={textToAdd}
+                    onChange={setTextToAdd}
+                    multiline={4}
+                    autoComplete="off"
+                    placeholder="Enter the replacement text..."
+                  />
+                </>
               ) : (
-              <TextField
-                label={descriptionPosition === 'beginning' ? "Text to add at the beginning" : "Text to add at the end"}
-                value={textToAdd}
-                onChange={setTextToAdd}
-                multiline={4}
-                autoComplete="off"
-                placeholder={`Enter the text you want to add ${descriptionPosition === 'beginning' ? 'at the beginning' : 'to the end'} of the description...`}
-              />
+                <TextField
+                  label={descriptionPosition === 'beginning' ? "Text to add at the beginning" : "Text to add at the end"}
+                  value={textToAdd}
+                  onChange={setTextToAdd}
+                  multiline={4}
+                  autoComplete="off"
+                  placeholder={`Enter the text you want to add ${descriptionPosition === 'beginning' ? 'at the beginning' : 'to the end'} of the description...`}
+                />
               )}
               <Button 
                 variant="primary" 
                 tone="success"
                 onClick={handleBulkEdit}
-                disabled={!textToAdd.trim() && !textToRemove.trim()}
+                disabled={
+                  (descriptionPosition === 'remove' && !textToRemove.trim()) || 
+                  (descriptionPosition === 'replace' && (!textToRemove.trim() || !textToAdd.trim())) ||
+                  ((descriptionPosition === 'beginning' || descriptionPosition === 'end') && !textToAdd.trim())
+                }
               >
                 Start Bulk Edit Now
               </Button>
