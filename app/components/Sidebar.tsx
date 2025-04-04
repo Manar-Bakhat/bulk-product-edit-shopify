@@ -20,7 +20,9 @@ import {
   CashDollarIcon,
   StoreIcon,
   EditIcon,
-  FileIcon
+  FileIcon,
+  HashtagIcon,
+  StatusActiveIcon
 } from '@shopify/polaris-icons';
 
 interface SidebarSection {
@@ -99,6 +101,18 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           icon: FileIcon,
           label: 'Edit Description',
           sectionId: 'description'
+        },
+        {
+          id: 'tag',
+          icon: HashtagIcon,
+          label: 'Edit Tag',
+          sectionId: 'tag'
+        },
+        {
+          id: 'status',
+          icon: StatusActiveIcon,
+          label: 'Edit Status',
+          sectionId: 'status'
         }
       ]
     }

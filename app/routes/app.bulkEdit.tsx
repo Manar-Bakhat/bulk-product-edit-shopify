@@ -38,6 +38,8 @@ import { EditTitle } from "../components/EditTitle";
 import { EditPrice } from "../components/EditPrice";
 import { EditVendor } from "../components/EditVendor";
 import { EditDescription } from "../components/EditDescription";
+import { EditTag } from "../components/EditTag";
+import { EditStatus } from "../components/EditStatus";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
@@ -47,6 +49,8 @@ import { handlePriceEdit } from "../services/priceEditService";
 import { handleTitleEdit } from "../services/titleEditService";
 import { handleVendorEdit } from "../services/vendorEditService";
 import { handleDescriptionEdit } from "../services/descriptionEditService";
+import { handleTagEdit } from "../services/tagEditService";
+import { handleStatusEdit } from "../services/statusEditService";
 
 interface Product {
   id: string;
@@ -181,6 +185,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const actionType = formData.get("actionType") as string;
   const section = formData.get("section") as string;
+  const action = formData.get("action") as string;
+
+  // Handle fetch tags action
+  if (action === "fetchTags") {
+    return handleTagEdit(request, formData);
+  }
 
   if (actionType === "bulkEdit") {
     if (section === "price") {
@@ -191,6 +201,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return handleVendorEdit(request, formData);
     } else if (section === "description") {
       return handleDescriptionEdit(request, formData);
+    } else if (section === "tag") {
+      return handleTagEdit(request, formData);
+    } else if (section === "status") {
+      return handleStatusEdit(request, formData);
     }
   }
 
@@ -414,6 +428,10 @@ export default function BulkEdit() {
         return <EditVendor key={section} />;
       case "description":
         return <EditDescription key={section} />;
+      case "tag":
+        return <EditTag key={section} />;
+      case "status":
+        return <EditStatus key={section} />;
       default:
         return null;
     }
