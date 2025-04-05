@@ -40,6 +40,7 @@ import { EditVendor } from "../components/EditVendor";
 import { EditDescription } from "../components/EditDescription";
 import { EditTag } from "../components/EditTag";
 import { EditStatus } from "../components/EditStatus";
+import { EditProductType } from "../components/EditProductType";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
@@ -51,6 +52,7 @@ import { handleVendorEdit } from "../services/vendorEditService";
 import { handleDescriptionEdit } from "../services/descriptionEditService";
 import { handleTagEdit } from "../services/tagEditService";
 import { handleStatusEdit } from "../services/statusEditService";
+import { handleProductTypeEdit } from "../services/productTypeEditService";
 
 interface Product {
   id: string;
@@ -205,6 +207,8 @@ export async function action({ request }: ActionFunctionArgs) {
       return handleTagEdit(request, formData);
     } else if (section === "status") {
       return handleStatusEdit(request, formData);
+    } else if (section === "productType") {
+      return handleProductTypeEdit(request, formData);
     }
   }
 
@@ -432,6 +436,8 @@ export default function BulkEdit() {
         return <EditTag key={section} />;
       case "status":
         return <EditStatus key={section} />;
+      case "productType":
+        return <EditProductType key={section} />;
       default:
         return null;
     }
