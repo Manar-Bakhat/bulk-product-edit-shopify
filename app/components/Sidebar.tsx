@@ -23,7 +23,8 @@ import {
   FileIcon,
   HashtagIcon,
   StatusActiveIcon,
-  InventoryIcon
+  InventoryIcon,
+  BarcodeIcon
 } from '@shopify/polaris-icons';
 
 interface SidebarSection {
@@ -116,12 +117,6 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           sectionId: 'status'
         },
         {
-          id: 'sku',
-          icon: InventoryIcon,
-          label: 'Edit SKU',
-          sectionId: 'sku'
-        },
-        {
           id: 'productType',
           icon: InventoryIcon,
           label: 'Edit Product Type',
@@ -132,7 +127,13 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           icon: EditIcon,
           label: 'Edit Product Category',
           sectionId: 'productCategory'
-        }
+        },
+        {
+          id: 'sku',
+          icon: BarcodeIcon,
+          label: 'Edit SKU',
+          sectionId: 'sku'
+        },
       ]
     }
   ];

@@ -61,7 +61,19 @@ interface ActionData {
   };
   error?: string;
   success?: boolean;
+  partialFailure?: boolean;
   message?: string;
+  details?: string;
+  results?: Array<{
+    productId: string;
+    productTitle: string;
+    variantUpdates: Array<{
+      variantId: string;
+      originalSku: string;
+      newSku: string;
+      skipped: boolean;
+    }>;
+  }>;
   stats?: {
     updated: number;
     skipped: number;
@@ -72,6 +84,7 @@ interface ActionData {
 }
 
 function EditSKU() {
+  // State variables
   const [selectedField, setSelectedField] = useState('title');
   const [selectedCondition, setSelectedCondition] = useState('contains');
   const [filterValue, setFilterValue] = useState('');
@@ -82,7 +95,10 @@ function EditSKU() {
   const actionData = useActionData<ActionData>();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
-  const [newSKU, setNewSKU] = useState('');
+  
+  // SKU editing options
+  const [skuAction, setSkuAction] = useState('update');
+  const [skuValue, setSkuValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle filtered products
@@ -114,27 +130,105 @@ function EditSKU() {
       
       if (actionData.success) {
         console.log('[EditSKU] Bulk edit successful!');
-        // Reset form fields
-        setNewSKU('');
-
-        // Show success message with stats if available
-        const statsMessage = actionData.stats 
-          ? `\n\nProducts Updated: ${actionData.stats.updated}\nVariants Updated: ${actionData.stats.variantsUpdated}\nSkipped: ${actionData.stats.skipped}\nErrors: ${actionData.stats.errors}`
-          : '';
+        console.log('[EditSKU] Success message:', actionData.message);
+        
+        if (actionData.results) {
+          console.log('[EditSKU] Update results:', actionData.results);
+          
+          // Vérifier si des variants ont réellement été modifiés
+          const updatedVariants = actionData.results.flatMap(result => 
+            (result.variantUpdates || []).filter(update => !update.skipped)
+          );
+          
+          const variantsWithSameSku = updatedVariants.filter(v => v.originalSku === v.newSku);
+          
+          if (updatedVariants.length === 0) {
+            console.warn('[EditSKU] Aucun variant n\'a été modifié malgré le succès signalé');
+            
+            // No variants were updated, show a warning instead
+            Swal.fire({
+              title: 'Attention',
+              text: 'Operation completed, but no SKUs were changed. This could be because the SKUs already had the specified values.',
+              icon: 'warning',
+              confirmButtonText: 'OK',
+              confirmButtonColor: "#008060"
+            });
+            
+          } else if (variantsWithSameSku.length > 0 && variantsWithSameSku.length === updatedVariants.length) {
+            console.warn('[EditSKU] Tous les variants ont le même SKU avant et après la mise à jour:', variantsWithSameSku);
+            
+            // All variants had the same SKU before and after, show a warning
+            Swal.fire({
+              title: 'Attention',
+              text: 'Operation completed, but all SKUs already had the specified values. No changes were made.',
+              icon: 'warning',
+              confirmButtonText: 'OK',
+              confirmButtonColor: "#008060"
+            });
+            
+          } else {
+            // Créer un message de succès avec détails
+            const updatedProductsCount = actionData.results.length;
+            const updatedVariantsCount = updatedVariants.length;
+            
+            // Message de succès simplifié
+            const successMessage = 'SKUs updated successfully!';
 
         Swal.fire({
           title: 'Success!',
-          text: (actionData.message || 'Product SKUs updated successfully!') + statsMessage,
+              text: successMessage,
+              icon: 'success',
+              confirmButtonText: 'OK',
+              confirmButtonColor: "#008060"
+            });
+          }
+          
+          // Reset form fields in all cases
+          setSkuValue('');
+          
+        } else if (actionData.partialFailure) {
+          // Partial success with errors
+          Swal.fire({
+            title: 'Partial Success',
+            text: actionData.message || 'Some SKUs were updated, but there were errors with others.',
+            icon: 'warning',
+            confirmButtonText: 'OK',
+            confirmButtonColor: "#008060"
+          });
+          
+          // Reset form fields
+          setSkuValue('');
+          
+        } else {
+          // Si pas de résultats détaillés, afficher le message simple
+          Swal.fire({
+            title: 'Success!',
+            text: 'SKUs updated successfully!',
           icon: 'success',
           confirmButtonText: 'OK',
           confirmButtonColor: "#008060"
         });
+        }
       } else if (actionData.error) {
         console.error('[EditSKU] Bulk edit failed:', actionData.error);
+        console.error('[EditSKU] Error details:', actionData.details || 'No details provided');
+        
+        // Vérifier si l'erreur concerne l'API GraphQL manquante
+        let errorMessage = actionData.error;
+        const errorIcon: 'error' | 'warning' | 'info' | 'success' | 'question' = 'error';
+        
+        if (actionData.error.includes("doesn't exist on type 'Mutation'")) {
+          errorMessage = "There's a compatibility issue with the Shopify API. Please contact support for assistance.";
+        } else if (actionData.error.includes('SKUs were not updated')) {
+          errorMessage = "SKUs could not be updated. Please try again later or contact support.";
+        } else if (actionData.error.includes('API access') || actionData.error.includes('token')) {
+          errorMessage = "There was an issue with your Shopify API access. Please refresh the page or contact support.";
+        }
+        
         Swal.fire({
           title: 'Error',
-          text: actionData.error,
-          icon: 'error',
+          text: errorMessage,
+          icon: errorIcon,
           confirmButtonText: 'OK',
           confirmButtonColor: "#008060"
         });
@@ -279,11 +373,11 @@ function EditSKU() {
       return;
     }
 
-    if (!newSKU) {
-      // Show an error if no SKU is entered
+    // Validation based on the selected SKU action
+    if (skuAction === 'update' && !skuValue) {
       Swal.fire({
         title: 'Error',
-        text: 'Please enter a new SKU template to apply.',
+        text: 'Please enter a value to update SKU to.',
         icon: 'error',
         confirmButtonText: 'OK',
         confirmButtonColor: "#008060"
@@ -297,19 +391,20 @@ function EditSKU() {
     formData.append("actionType", "bulkEdit");
     formData.append("section", "sku");
     formData.append("productIds", JSON.stringify(products.map(p => p.id)));
-    formData.append("newSKU", newSKU);
+    formData.append("skuAction", skuAction);
     
+    // Add appropriate values based on the selected action
+    if (skuAction === 'update') {
+      formData.append("skuValue", skuValue);
+      console.log(`[EditSKU] Sending ${skuAction} action with value: "${skuValue}"`);
+    }
+    
+    console.log(`[EditSKU] Submitting bulk edit for ${products.length} products with action: ${skuAction}`);
     submit(formData, { method: "post" });
   };
 
   return (
     <BlockStack gap="500">
-      {/* Hello Message */}
-      <Card>
-        <BlockStack gap="400">
-          <Text variant="headingLg" as="h1">Hello</Text>
-        </BlockStack>
-      </Card>
       
       {/* Filter Section */}
       <Card>
@@ -427,12 +522,11 @@ function EditSKU() {
           <BlockStack gap="400">
             <div style={{ maxWidth: '400px' }}>
               <TextField
-                label="Set new SKU template"
-                value={newSKU}
-                onChange={setNewSKU}
+                label="Update SKU to"
+                value={skuValue}
+                onChange={setSkuValue}
                 autoComplete="off"
-                placeholder="Enter new SKU template..."
-                helpText="You can use [id], [title], [vendor], or [index] as placeholders that will be replaced with the product's data."
+                placeholder="Enter updated SKU..."
               />
             </div>
             
@@ -440,7 +534,7 @@ function EditSKU() {
               variant="primary" 
               onClick={handleBulkEdit} 
               tone="success"
-              disabled={!newSKU}
+              disabled={isSubmitting}
               loading={isSubmitting}
             >
               Start bulk edit now
@@ -452,5 +546,4 @@ function EditSKU() {
   );
 }
 
-// Export component as default
 export default EditSKU;
