@@ -43,6 +43,7 @@ import { EditStatus } from "../components/EditStatus";
 import { EditProductType } from "../components/EditProductType";
 import EditProductCategory from "../components/EditProductCategory";
 import EditSKU from "../components/EditSKU";
+import EditBarcode from "../components/EditBarcode";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
@@ -57,6 +58,7 @@ import { handleStatusEdit } from "../services/statusEditService";
 import { handleProductTypeEdit } from "../services/productTypeEditService";
 import { handleProductCategoryEdit } from "../services/productCategoryEditService";
 import { handleSkuEdit } from "../services/skuEditService";
+import { handleBarcodeEdit } from "../services/barcodeEditService";
 
 interface Product {
   id: string;
@@ -217,6 +219,8 @@ export async function action({ request }: ActionFunctionArgs) {
       return handleProductCategoryEdit(request, formData);
     } else if (section === "sku") {
       return handleSkuEdit(request, formData);
+    } else if (section === "barcode") {
+      return handleBarcodeEdit(request, formData);
     }
   }
 
@@ -450,6 +454,8 @@ export default function BulkEdit() {
         return <EditProductType key={section} />;
       case "productCategory":
         return <EditProductCategory key={section} />;
+      case "barcode":
+        return <EditBarcode key={section} />;
       default:
         return null;
     }
