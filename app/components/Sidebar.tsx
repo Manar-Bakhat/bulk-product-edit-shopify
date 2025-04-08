@@ -26,7 +26,8 @@ import {
   InventoryIcon,
   BarcodeIcon,
   MobileIcon,
-  ProductIcon
+  ProductIcon,
+  MoneyIcon
 } from '@shopify/polaris-icons';
 
 interface SidebarSection {
@@ -148,6 +149,15 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           label: 'Edit Variant Weight',
           sectionId: 'variantWeight'
         },
+        /*
+          {
+          id: 'costPerItem',
+          icon: MoneyIcon,
+          label: 'Cost Per Item',
+          sectionId: 'costPerItem'
+        },
+        */
+        
       ]
     }
   ];

@@ -45,6 +45,7 @@ import EditProductCategory from "../components/EditProductCategory";
 import EditSKU from "../components/EditSKU";
 import EditBarcode from "../components/EditBarcode";
 import EditVariantWeight from "../components/EditVariantWeight";
+import EditCostPerItem from "../components/EditCostPerItem";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
@@ -61,6 +62,7 @@ import { handleProductCategoryEdit } from "../services/productCategoryEditServic
 import { handleSkuEdit } from "../services/skuEditService";
 import { handleBarcodeEdit } from "../services/barcodeEditService";
 import { handleVariantWeightEdit } from "../services/variantWeightEditService";
+import { handleCostPerItemEdit } from "../services/costPerItemEditService";
 
 interface Product {
   id: string;
@@ -259,6 +261,26 @@ export async function action({ request }: ActionFunctionArgs) {
           success: false
         });
       }
+    } else if (section === "costPerItem") {
+      // Validate required fields
+      const costAction = formData.get("action") as string;
+      const costValue = formData.get("costValue") as string;
+      
+      if (!costAction) {
+        return json(
+          { success: false, error: "Cost action is required" },
+          { status: 400 }
+        );
+      }
+      
+      if (!costValue) {
+        return json(
+          { success: false, error: "Cost value is required" },
+          { status: 400 }
+        );
+      }
+      
+      return handleCostPerItemEdit(request, formData);
     }
   }
 
@@ -496,6 +518,8 @@ export default function BulkEdit() {
         return <EditBarcode key={section} />;
       case "variantWeight":
         return <EditVariantWeight />;
+      case "costPerItem":
+        return <EditCostPerItem />;
       default:
         return null;
     }
