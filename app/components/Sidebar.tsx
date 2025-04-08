@@ -142,6 +142,12 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           label: 'Edit Barcode',
           sectionId: 'barcode'
         },
+        {
+          id: 'variantWeight',
+          icon: ProductIcon,
+          label: 'Edit Variant Weight',
+          sectionId: 'variantWeight'
+        },
       ]
     }
   ];

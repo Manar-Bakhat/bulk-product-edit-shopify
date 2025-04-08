@@ -44,6 +44,7 @@ import { EditProductType } from "../components/EditProductType";
 import EditProductCategory from "../components/EditProductCategory";
 import EditSKU from "../components/EditSKU";
 import EditBarcode from "../components/EditBarcode";
+import EditVariantWeight from "../components/EditVariantWeight";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
@@ -59,6 +60,7 @@ import { handleProductTypeEdit } from "../services/productTypeEditService";
 import { handleProductCategoryEdit } from "../services/productCategoryEditService";
 import { handleSkuEdit } from "../services/skuEditService";
 import { handleBarcodeEdit } from "../services/barcodeEditService";
+import { handleVariantWeightEdit } from "../services/variantWeightEditService";
 
 interface Product {
   id: string;
@@ -221,6 +223,42 @@ export async function action({ request }: ActionFunctionArgs) {
       return handleSkuEdit(request, formData);
     } else if (section === "barcode") {
       return handleBarcodeEdit(request, formData);
+    } else if (section === "variantWeight") {
+      console.log(`[app.bulkEdit] Traitement d'une demande d'édition de poids de variantes`);
+      
+      // Validation des données
+      const weightUnit = formData.get("weightUnit");
+      if (!weightUnit) {
+        return json({
+          error: "Missing required parameter: weightUnit",
+          success: false
+        });
+      }
+      
+      // En mode 'weight', on valide la valeur du poids
+      if (formData.has("weightValue")) {
+        const weightValue = formData.get("weightValue");
+        if (weightValue !== null && weightValue !== "") {
+          if (isNaN(Number(weightValue)) || Number(weightValue) < 0) {
+            return json({
+              error: "Invalid weight value: must be a positive number",
+              success: false
+            });
+          }
+        }
+      }
+      
+      // Transmission au service spécialisé
+      try {
+        console.log(`[app.bulkEdit] Appel du service de gestion des poids de variantes`);
+        return await handleVariantWeightEdit(request, formData);
+      } catch (error) {
+        console.error(`[app.bulkEdit] Erreur lors de l'édition des poids de variantes:`, error);
+        return json({
+          error: error instanceof Error ? error.message : "Une erreur s'est produite lors de la mise à jour des poids de variantes",
+          success: false
+        });
+      }
     }
   }
 
@@ -456,6 +494,8 @@ export default function BulkEdit() {
         return <EditProductCategory key={section} />;
       case "barcode":
         return <EditBarcode key={section} />;
+      case "variantWeight":
+        return <EditVariantWeight />;
       default:
         return null;
     }
