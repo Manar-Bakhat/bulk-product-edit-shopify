@@ -48,6 +48,13 @@ interface Product {
       currencyCode: string;
     };
   };
+  collections?: {
+    edges: Array<{
+      node: {
+        title: string;
+      };
+    }>;
+  };
 }
 
 interface ActionData {
@@ -88,7 +95,8 @@ const EditProductCategory = () => {
           vendor: node.vendor,
           status: node.status,
           featuredImage: node.featuredImage,
-          priceRangeV2: node.priceRangeV2
+          priceRangeV2: node.priceRangeV2,
+          collections: node.collections
         }));
         setProducts(filteredProducts);
         setHasSearched(true);
@@ -175,6 +183,11 @@ const EditProductCategory = () => {
     </div>,
     <div>
       <Text variant="bodySm" as="p">{product.productType || 'N/A'}</Text>
+    </div>,
+    <div>
+      <Text variant="bodySm" as="p">
+        {product.collections?.edges?.map(edge => edge.node.title).join(', ') || 'No categories'}
+      </Text>
     </div>,
     <div>
       <Badge tone={product.status === 'ACTIVE' ? 'success' : 'warning'}>
@@ -295,7 +308,13 @@ const EditProductCategory = () => {
 
   return (
     <BlockStack gap="500">
-      {/* Filter Section */}
+      {/* Progress Indicator */}
+      <BlockStack gap="200">
+        <InlineStack align="space-between" blockAlign="center">
+          <Badge tone="success">Step 1 of 2</Badge>
+          <ProgressBar progress={50} tone="success" />
+        </InlineStack>
+      </BlockStack>
       <Card>
         <BlockStack gap="400">
           <InlineStack align="space-between" blockAlign="center">
@@ -303,11 +322,15 @@ const EditProductCategory = () => {
               <Icon source={FilterIcon} tone="success" />
               <Text variant="headingSm" as="h2">Filter Products</Text>
             </InlineStack>
-            <Button variant="plain" onClick={handleClearFilters} icon={ResetIcon}>
-              Reset filters
+            <Button
+              icon={ResetIcon}
+              onClick={handleClearFilters}
+              disabled={!hasSearched}
+              tone="success"
+            >
+                        Clear filters
             </Button>
           </InlineStack>
-          
           <Divider />
 
           <BlockStack gap="400">
@@ -366,8 +389,8 @@ const EditProductCategory = () => {
                       {products.length} {products.length === 1 ? 'product' : 'products'} found
                     </Text>
                     <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Type', 'Status', 'Price']}
+                      columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                      headings={['Product', 'Description', 'Type', 'Category', 'Status', 'Price']}
                       rows={rows}
                     />
                     {products.length > itemsPerPage && (

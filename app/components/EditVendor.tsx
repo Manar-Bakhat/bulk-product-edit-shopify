@@ -144,25 +144,6 @@ export function EditVendor() {
       />
       <div>
         <Text variant="bodyMd" as="p" fontWeight="bold">{product.title}</Text>
-        <Text variant="bodySm" as="p" tone="subdued">{product.vendor}</Text>
-        {/*      
-        <InlineStack gap="200" blockAlign="center">
-          <Button
-            size="slim"
-            tone="success"
-            onClick={() => window.open(`/admin/products/${product.id}`, '_blank')}
-          >
-            Go to Shopify Admin
-          </Button>
-          <Button
-            size="slim"
-            tone="success"
-            onClick={() => window.open(`/admin/online-store/products/${product.id}`, '_blank')}
-          >
-            Go to Online Store
-          </Button>
-        </InlineStack>
-        */}
       </div>
     </div>,
     <div style={{ 
@@ -191,6 +172,11 @@ export function EditVendor() {
       <Badge tone={product.status === 'ACTIVE' ? 'success' : 'warning'}>
         {product.status}
       </Badge>
+    </div>,
+    <div>
+      <Text variant="bodyMd" as="p" fontWeight="medium">
+        {product.vendor || 'N/A'}
+      </Text>
     </div>,
     <div style={{ textAlign: 'right' }}>
       <Text variant="bodyMd" as="p" fontWeight="bold">
@@ -468,8 +454,8 @@ export function EditVendor() {
                 {products.length > 0 ? (
                   <BlockStack gap="400">
                     <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Product Type', 'Status', 'Price']}
+                      columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                      headings={['Product', 'Description', 'Product Type', 'Status', 'Vendor', 'Price']}
                       rows={rows}
                       hoverable
                       defaultSortDirection="descending"

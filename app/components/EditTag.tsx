@@ -43,6 +43,7 @@ interface Product {
   productType: string;
   vendor: string;
   status: string;
+  tags?: string[];
   featuredImage?: {
     url: string;
     altText?: string;
@@ -99,14 +100,23 @@ export function EditTag() {
           vendor: node.vendor,
           status: node.status,
           featuredImage: node.featuredImage,
-          priceRangeV2: node.priceRangeV2
+          priceRangeV2: node.priceRangeV2,
+          tags: node.tags || []
         }));
         setProducts(filteredProducts);
         setHasSearched(true);
         
-        // Extract unique tags from all products
+        // Extract unique tags from all products if tags are present
         if (actionData.data.products.edges.length > 0) {
-          fetchExistingTags(filteredProducts.map(p => p.id));
+          // Use tags directly from the response if available
+          const allTags = filteredProducts.flatMap(product => product.tags || []);
+          const uniqueTags = [...new Set(allTags)].sort();
+          if (uniqueTags.length > 0) {
+            setExistingTags(uniqueTags);
+          } else {
+            // Fallback to fetching tags if they're not in the response
+            fetchExistingTags(filteredProducts.map(p => p.id));
+          }
         }
       }
       setIsLoading(false);
@@ -226,24 +236,6 @@ export function EditTag() {
       <div>
         <Text variant="bodyMd" as="p" fontWeight="bold">{product.title}</Text>
         <Text variant="bodySm" as="p" tone="subdued">{product.vendor}</Text>
-        {/*      
-        <InlineStack gap="200" blockAlign="center">
-          <Button
-            size="slim"
-            tone="success"
-            onClick={() => window.open(`/admin/products/${product.id}`, '_blank')}
-          >
-            Go to Shopify Admin
-          </Button>
-          <Button
-            size="slim"
-            tone="success"
-            onClick={() => window.open(`/admin/online-store/products/${product.id}`, '_blank')}
-          >
-            Go to Online Store
-          </Button>
-        </InlineStack>
-        */}
       </div>
     </div>,
     <div style={{ 
@@ -272,6 +264,20 @@ export function EditTag() {
       <Badge tone={product.status === 'ACTIVE' ? 'success' : 'warning'}>
         {product.status}
       </Badge>
+    </div>,
+    <div style={{ maxWidth: '200px', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        {product.tags && product.tags.length > 0 ? (
+          product.tags.slice(0, 3).map((tag, index) => (
+            <Badge key={index} tone="info">{tag}</Badge>
+          ))
+        ) : (
+          <Text variant="bodySm" as="p" tone="subdued">No tags</Text>
+        )}
+        {product.tags && product.tags.length > 3 && (
+          <Text variant="bodySm" as="p" tone="subdued">+{product.tags.length - 3} more</Text>
+        )}
+      </div>
     </div>,
     <div style={{ textAlign: 'right' }}>
       <Text variant="bodyMd" as="p" fontWeight="bold">
@@ -527,8 +533,8 @@ export function EditTag() {
                 {products.length > 0 ? (
                   <BlockStack gap="400">
                     <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Product Type', 'Status', 'Price']}
+                      columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                      headings={['Product', 'Description', 'Product Type', 'Status', 'Tags', 'Price']}
                       rows={rows}
                       hoverable
                       defaultSortDirection="descending"

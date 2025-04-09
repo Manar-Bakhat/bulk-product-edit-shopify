@@ -53,6 +53,7 @@ interface Product {
       currencyCode: string;
     };
   };
+  compareAtPrice?: string;
 }
 
 /**
@@ -145,7 +146,8 @@ export function EditPrice() {
           vendor: node.vendor,
           status: node.status,
           featuredImage: node.featuredImage,
-          priceRangeV2: node.priceRangeV2
+          priceRangeV2: node.priceRangeV2,
+          compareAtPrice: node.variants?.edges[0]?.node?.compareAtPrice || null
         }));
         setProducts(filteredProducts);
         setHasSearched(true);
@@ -235,6 +237,16 @@ export function EditPrice() {
           style: 'currency',
           currency: product.priceRangeV2.minVariantPrice.currencyCode
         }).format(parseFloat(product.priceRangeV2.minVariantPrice.amount))}
+      </Text>
+    </div>,
+    <div style={{ textAlign: 'right' }}>
+      <Text variant="bodyMd" as="p" fontWeight="bold">
+        {product.compareAtPrice ? 
+          new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: product.priceRangeV2.minVariantPrice.currencyCode
+          }).format(parseFloat(product.compareAtPrice)) 
+        : '-'}
       </Text>
     </div>
   ]);
@@ -636,8 +648,8 @@ export function EditPrice() {
                 {products.length > 0 ? (
                   <BlockStack gap="400">
                     <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Product Type', 'Status', 'Price']}
+                      columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                      headings={['Product', 'Description', 'Product Type', 'Status', 'Price', 'Compare at Price']}
                       rows={rows}
                       hoverable
                       defaultSortDirection="descending"

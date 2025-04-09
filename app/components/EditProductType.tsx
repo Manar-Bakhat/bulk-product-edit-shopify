@@ -295,7 +295,13 @@ export function EditProductType() {
 
   return (
     <BlockStack gap="500">
-      {/* Filter Section */}
+      {/* Progress Indicator */}
+      <BlockStack gap="200">
+        <InlineStack align="space-between" blockAlign="center">
+          <Badge tone="success">Step 1 of 2</Badge>
+          <ProgressBar progress={50} tone="success" />
+        </InlineStack>
+      </BlockStack>
       <Card>
         <BlockStack gap="400">
           <InlineStack align="space-between" blockAlign="center">
@@ -303,11 +309,15 @@ export function EditProductType() {
               <Icon source={FilterIcon} tone="success" />
               <Text variant="headingSm" as="h2">Filter Products</Text>
             </InlineStack>
-            <Button variant="plain" onClick={handleClearFilters} icon={ResetIcon}>
-              Reset filters
+            <Button
+              icon={ResetIcon}
+              onClick={handleClearFilters}
+              disabled={!hasSearched}
+              tone="success"
+            >
+              Clear filters
             </Button>
           </InlineStack>
-          
           <Divider />
 
           <BlockStack gap="400">

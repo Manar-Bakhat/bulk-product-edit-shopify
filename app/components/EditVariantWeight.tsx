@@ -49,6 +49,15 @@ interface Product {
       currencyCode: string;
     };
   };
+  variants?: {
+    edges: Array<{
+      node: {
+        weight: string;
+        weightUnit: string;
+        weight_unit?: string;
+      };
+    }>;
+  };
 }
 
 interface ActionData {
@@ -116,7 +125,8 @@ function EditVariantWeight() {
           vendor: node.vendor,
           status: node.status,
           featuredImage: node.featuredImage,
-          priceRangeV2: node.priceRangeV2
+          priceRangeV2: node.priceRangeV2,
+          variants: node.variants
         }));
         setProducts(filteredProducts);
         setHasSearched(true);
@@ -167,62 +177,93 @@ function EditVariantWeight() {
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = products.slice(startIndex, endIndex);
 
-  const rows = currentProducts.map((product) => [
-    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-      <img 
-        src={product.featuredImage?.url || 'https://cdn.shopify.com/s/files/1/0757/9956/5321/files/placeholder.png'} 
-        alt={product.featuredImage?.altText || 'Product image'} 
-        style={{ 
-          width: '60px', 
-          height: '60px', 
-          objectFit: 'cover',
-          borderRadius: '4px'
-        }}
-        onError={(e) => {
-          e.currentTarget.src = 'https://cdn.shopify.com/s/files/1/0757/9956/5321/files/placeholder.png';
-        }}
-      />
+  const rows = currentProducts.map((product) => {
+    // Process weight display
+    const weightDisplay = product.variants?.edges?.length
+      ? product.variants.edges.map(({ node: variantNode }, index) => {
+          console.log(`Variant #${index+1} full data:`, JSON.stringify(variantNode, null, 2));
+          
+          // Get weight and unit from the variant
+          const weight = variantNode.weight || '';
+          const unit = variantNode.weightUnit || variantNode.weight_unit || 'g';
+          
+          console.log(`Raw weight value: "${weight}", type: ${typeof weight}`);
+          console.log(`Raw unit value: "${unit}", type: ${typeof unit}`);
+          
+          // Display actual weight (if it exists and is not zero)
+          if (!weight || weight === "0") {
+            return "No weight";
+          }
+          
+          // Display weight with unit
+          return `${weight} ${unit}`;
+        }).join(", ")
+      : "No variants";
+
+    console.log('Final weight display:', weightDisplay);
+
+    return [
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <img 
+          src={product.featuredImage?.url || 'https://cdn.shopify.com/s/files/1/0757/9956/5321/files/placeholder.png'} 
+          alt={product.featuredImage?.altText || 'Product image'} 
+          style={{ 
+            width: '60px', 
+            height: '60px', 
+            objectFit: 'cover',
+            borderRadius: '4px'
+          }}
+          onError={(e) => {
+            e.currentTarget.src = 'https://cdn.shopify.com/s/files/1/0757/9956/5321/files/placeholder.png';
+          }}
+        />
+        <div>
+          <Text variant="bodyMd" as="p" fontWeight="bold">{product.title}</Text>
+          <Text variant="bodySm" as="p" tone="subdued">{product.vendor}</Text>
+        </div>
+      </div>,
+      <div style={{ 
+        maxWidth: '200px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        position: 'relative'
+      }}>
+        <Text variant="bodySm" as="p" tone="subdued">
+          {product.description ? (
+            <div style={{ 
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              {product.description}
+            </div>
+          ) : 'No description'}
+        </Text>
+      </div>,
       <div>
-        <Text variant="bodyMd" as="p" fontWeight="bold">{product.title}</Text>
-        <Text variant="bodySm" as="p" tone="subdued">{product.vendor}</Text>
+        <Text variant="bodySm" as="p">{product.productType || 'N/A'}</Text>
+      </div>,
+      <div>
+        <Text variant="bodySm" as="p">
+          {weightDisplay}
+        </Text>
+      </div>,
+      <div>
+        <Badge tone={product.status === 'ACTIVE' ? 'success' : 'warning'}>
+          {product.status}
+        </Badge>
+      </div>,
+      <div style={{ textAlign: 'right' }}>
+        <Text variant="bodyMd" as="p" fontWeight="bold">
+          {new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: product.priceRangeV2.minVariantPrice.currencyCode
+          }).format(parseFloat(product.priceRangeV2.minVariantPrice.amount))}
+        </Text>
       </div>
-    </div>,
-    <div style={{ 
-      maxWidth: '200px',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-      position: 'relative'
-    }}>
-      <Text variant="bodySm" as="p" tone="subdued">
-        {product.description ? (
-          <div style={{ 
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}>
-            {product.description}
-          </div>
-        ) : 'No description'}
-      </Text>
-    </div>,
-    <div>
-      <Text variant="bodySm" as="p">{product.productType || 'N/A'}</Text>
-    </div>,
-    <div>
-      <Badge tone={product.status === 'ACTIVE' ? 'success' : 'warning'}>
-        {product.status}
-      </Badge>
-    </div>,
-    <div style={{ textAlign: 'right' }}>
-      <Text variant="bodyMd" as="p" fontWeight="bold">
-        {new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: product.priceRangeV2.minVariantPrice.currencyCode
-        }).format(parseFloat(product.priceRangeV2.minVariantPrice.amount))}
-      </Text>
-    </div>
-  ]);
+    ];
+  });
 
   const fieldOptions = [
     { label: 'Title', value: 'title' },
@@ -366,6 +407,14 @@ function EditVariantWeight() {
 
   return (
     <BlockStack gap="500">
+
+      {/* Progress Indicator */}
+      <BlockStack gap="200">
+        <InlineStack align="space-between" blockAlign="center">
+          <Badge tone="success">Step 1 of 2</Badge>
+          <ProgressBar progress={50} tone="success" />
+        </InlineStack>
+      </BlockStack>
       
       {/* Filter Section */}
       <Card>
@@ -375,11 +424,15 @@ function EditVariantWeight() {
               <Icon source={FilterIcon} tone="success" />
               <Text variant="headingSm" as="h2">Filter Products</Text>
             </InlineStack>
-            <Button variant="plain" onClick={handleClearFilters} icon={ResetIcon}>
-              Reset filters
+            <Button
+              icon={ResetIcon}
+              onClick={handleClearFilters}
+              disabled={!hasSearched}
+              tone="success"
+            >
+              Clear filters
             </Button>
           </InlineStack>
-          
           <Divider />
 
           <BlockStack gap="400">
@@ -438,8 +491,8 @@ function EditVariantWeight() {
                       {products.length} {products.length === 1 ? 'product' : 'products'} found
                     </Text>
                     <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Type', 'Status', 'Price']}
+                      columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                      headings={['Product', 'Description', 'Type', 'Weight', 'Status', 'Price']}
                       rows={rows}
                     />
                     {products.length > itemsPerPage && (

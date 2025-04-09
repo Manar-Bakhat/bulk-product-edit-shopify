@@ -21,6 +21,291 @@ export async function handleVariantWeightEdit(request: Request, formData: FormDa
   const { admin, session } = await authenticate.admin(request);
   console.log('[VariantWeightEditService] Admin authenticated');
 
+  // Si c'est une requête de prévisualisation (preview), traiter différemment
+  if (!formData.get("actionType")) {
+    console.log('[VariantWeightEditService] Handling preview request');
+    
+    try {
+      // Récupérer les paramètres de filtre
+      const field = formData.get("field") as string;
+      const condition = formData.get("condition") as string;
+      const value = formData.get("value") as string;
+      
+      console.log('[VariantWeightEditService] Filter params:', { field, condition, value });
+      
+      // Requête GraphQL pour obtenir les produits filtrés
+      let query = '';
+      if (field === 'productId' && condition === 'is') {
+        query = `
+          query {
+            product(id: "gid://shopify/Product/${value}") {
+              id
+              title
+              description
+              productType
+              vendor
+              status
+              featuredImage {
+                url
+                altText
+              }
+              priceRangeV2 {
+                minVariantPrice {
+                  amount
+                  currencyCode
+                }
+              }
+              variants(first: 100) {
+                edges {
+                  node {
+                    id
+                    title
+                    weight
+                    weightUnit
+                  }
+                }
+              }
+            }
+          }
+        `;
+      } else {
+        // Construire la requête GraphQL pour les autres filtres
+        let queryCondition = '';
+        const escapedValue = value.replace(/['"]/g, '').trim();
+        
+        switch (condition) {
+          case 'is':
+            queryCondition = `${field}:'${escapedValue}'`;
+            break;
+          case 'contains':
+            queryCondition = `${field}:'*${escapedValue}*'`;
+            break;
+          case 'doesNotContain':
+            queryCondition = `NOT ${field}:'*${escapedValue}*'`;
+            break;
+          case 'startsWith':
+            queryCondition = `${field}:'${escapedValue}*'`;
+            break;
+          case 'endsWith':
+            queryCondition = `${field}:'*${escapedValue}'`;
+            break;
+          case 'empty':
+            queryCondition = `NOT ${field}:*`;
+            break;
+        }
+        
+        query = `
+          query {
+            products(first: 50, query: "${queryCondition}") {
+              edges {
+                node {
+                  id
+                  title
+                  description
+                  productType
+                  vendor
+                  status
+                  featuredImage {
+                    url
+                    altText
+                  }
+                  priceRangeV2 {
+                    minVariantPrice {
+                      amount
+                      currencyCode
+                    }
+                  }
+                  variants(first: 100) {
+                    edges {
+                      node {
+                        id
+                        title
+                        weight
+                        weightUnit
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `;
+      }
+      
+      // Exécuter la requête GraphQL
+      const response = await admin.graphql(query);
+      const responseData = await response.json();
+      
+      console.log('[VariantWeightEditService] GraphQL response for preview');
+      
+      // Vérifier si les poids sont présents, sinon utiliser l'API REST
+      let productsToReturn;
+      
+      if (field === 'productId' && responseData.data.product) {
+        const product = responseData.data.product;
+        const missingWeightInfo = !product.variants?.edges?.[0]?.node?.weight;
+        
+        if (missingWeightInfo && formData.get("useRestApi") === "true") {
+          console.log('[VariantWeightEditService] Weight info missing, fetching via REST API');
+          // Récupérer via REST API
+          const shop = session.shop;
+          const token = session.accessToken;
+          
+          if (!token) {
+            throw new Error("Shopify access token not available");
+          }
+          
+          const productId = product.id.replace('gid://shopify/Product/', '');
+          
+          // Récupérer les variantes du produit via REST API
+          const variantsResponse = await fetch(
+            `https://${shop}/admin/api/2023-10/products/${productId}/variants.json`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Shopify-Access-Token': token
+              }
+            }
+          );
+          
+          if (!variantsResponse.ok) {
+            throw new Error(`Failed to fetch variants via REST: ${variantsResponse.statusText}`);
+          }
+          
+          const variantsData = await variantsResponse.json();
+          console.log(`[VariantWeightEditService] REST variants data for product ${productId}:`, JSON.stringify(variantsData, null, 2));
+          
+          // Mettre à jour les données des variantes avec les poids corrects
+          product.variants.edges = variantsData.variants.map((variant: any) => {
+            // S'assurer que les propriétés de poids sont converties correctement
+            const weight = variant.weight !== null && variant.weight !== undefined 
+              ? String(variant.weight) 
+              : '';
+            
+            console.log(`[VariantWeightEditService] Variant ${variant.id} weight data:`, {
+              originalWeight: variant.weight,
+              processedWeight: weight,
+              weightUnit: variant.weight_unit
+            });
+            
+            return {
+              node: {
+                id: `gid://shopify/ProductVariant/${variant.id}`,
+                title: variant.title,
+                weight: weight,
+                weight_unit: variant.weight_unit,
+                weightUnit: variant.weight_unit
+              }
+            };
+          });
+          
+          productsToReturn = { 
+            data: { 
+              products: { 
+                edges: [{ node: product }] 
+              } 
+            } 
+          };
+        } else {
+          productsToReturn = { 
+            data: { 
+              products: { 
+                edges: [{ node: product }] 
+              } 
+            } 
+          };
+        }
+      } else {
+        // Pour les recherches de plusieurs produits
+        const products = responseData.data.products.edges;
+        const missingWeightInfo = products.length > 0 && !products[0].node.variants?.edges?.[0]?.node?.weight;
+        
+        if (missingWeightInfo && formData.get("useRestApi") === "true") {
+          console.log('[VariantWeightEditService] Weight info missing in bulk results, fetching via REST API');
+          // Récupérer via REST API pour chaque produit
+          const shop = session.shop;
+          const token = session.accessToken;
+          
+          if (!token) {
+            throw new Error("Shopify access token not available");
+          }
+          
+          // Promettre de récupérer les données des variantes pour tous les produits
+          const productsWithVariants = await Promise.all(
+            products.map(async (product: any) => {
+              const productId = product.node.id.replace('gid://shopify/Product/', '');
+              
+              // Récupérer les variantes du produit via REST API
+              const variantsResponse = await fetch(
+                `https://${shop}/admin/api/2023-10/products/${productId}/variants.json`,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-Shopify-Access-Token': token
+                  }
+                }
+              );
+              
+              if (!variantsResponse.ok) {
+                console.error(`Failed to fetch variants for product ${productId}: ${variantsResponse.statusText}`);
+                return product; // Retourner le produit sans modifications
+              }
+              
+              const variantsData = await variantsResponse.json();
+              console.log(`[VariantWeightEditService] REST variants data for product ${productId}:`, JSON.stringify(variantsData, null, 2));
+              
+              // Mettre à jour les données des variantes avec les poids corrects
+              product.node.variants.edges = variantsData.variants.map((variant: any) => {
+                // S'assurer que les propriétés de poids sont converties correctement
+                const weight = variant.weight !== null && variant.weight !== undefined 
+                  ? String(variant.weight) 
+                  : '';
+                
+                console.log(`[VariantWeightEditService] Variant ${variant.id} weight data:`, {
+                  originalWeight: variant.weight,
+                  processedWeight: weight,
+                  weightUnit: variant.weight_unit
+                });
+                
+                return {
+                  node: {
+                    id: `gid://shopify/ProductVariant/${variant.id}`,
+                    title: variant.title,
+                    weight: weight,
+                    weight_unit: variant.weight_unit,
+                    weightUnit: variant.weight_unit
+                  }
+                };
+              });
+              
+              return product;
+            })
+          );
+          
+          productsToReturn = { 
+            data: { 
+              products: { 
+                edges: productsWithVariants 
+              } 
+            } 
+          };
+        } else {
+          productsToReturn = responseData;
+        }
+      }
+      
+      return json(productsToReturn);
+    } catch (error) {
+      console.error('[VariantWeightEditService] Error in preview request:', error);
+      return json({
+        error: error instanceof Error ? error.message : 'Unknown error during preview',
+        success: false
+      });
+    }
+  }
+
   // Méthode de contournement si la mutation GraphQL échoue
   async function fallbackUpdateVariantWeight(variantId: string, weightValue: string | null, weightUnit: string) {
     try {
@@ -344,6 +629,12 @@ export async function handleVariantWeightEdit(request: Request, formData: FormDa
                   node {
                     id
                     title
+                    weight
+                    weightUnit
+                    inventoryItem {
+                      id
+                      tracked
+                    }
                   }
                 }
               }
@@ -357,101 +648,70 @@ export async function handleVariantWeightEdit(request: Request, formData: FormDa
         );
 
         const productData = await getProductResponse.json();
-        console.log('[VariantWeightEditService] GraphQL response:', productData);
+        console.log('[VariantWeightEditService] GraphQL response:', JSON.stringify(productData, null, 2));
 
-        // Vérifier si l'API a retourné une erreur sur les champs weight/weightUnit
-        if (productData.errors && productData.errors.some(e => e.message.includes("Field 'weight' doesn't exist"))) {
-          console.log('[VariantWeightEditService] GraphQL error detected with weight field, using fallback method for all variants');
+        // Si GraphQL ne retourne pas les données de poids, utiliser l'API REST
+        if (!productData.data?.product?.variants?.edges?.[0]?.node?.weight) {
+          console.log('[VariantWeightEditService] Weight data not found in GraphQL response, using REST API');
           
-          // Récupérer uniquement les IDs des variants depuis la réponse
-          let variants;
-          try {
-            variants = productData.data?.product?.variants?.edges.map((edge: any) => ({
-              id: edge.node.id,
-              title: edge.node.title || ''
-            })) || [];
-          } catch (e) {
-            console.error('[VariantWeightEditService] Error extracting variant IDs:', e);
-            variants = [];
+          const shop = session.shop;
+          const token = session.accessToken;
+          
+          if (!token) {
+            throw new Error("Token d'accès Shopify non disponible");
           }
-
-          // Si aucun variant n'est trouvé, skip ce produit
-          if (variants.length === 0) {
-            console.log(`[VariantWeightEditService] Product ${productId} has no variants, skipping`);
-            return {
-              productId,
-              success: false,
-              userErrors: [{ message: 'No variants found' }],
-              skipped: true
-            };
-          }
-
-          // Process each variant to update its weight using only REST API
-          const variantUpdates = await Promise.all(
-            variants.map(async (variant: any) => {
-              try {
-                console.log(`[VariantWeightEditService] Processing variant ${variant.id} with fallback method`);
-                // Pour chaque variant, utiliser l'API REST pour récupérer et mettre à jour les poids
-                const result = await fallbackUpdateVariantWeight(
-                  variant.id, 
-                  editMode === 'weight' ? weightValue : null, 
-                  weightUnit
-                );
-                
-                if (result.success) {
-                  console.log(`[VariantWeightEditService] Weight successfully updated for variant ${variant.id}`);
-                  return {
-                    variantId: variant.id,
-                    originalWeight: result.originalWeight || '0',
-                    originalWeightUnit: result.originalWeightUnit || 'g',
-                    newWeight: result.weight,
-                    newWeightUnit: result.weight_unit,
-                    userErrors: [],
-                    skipped: false
-                  };
-                } else {
-                  console.error(`[VariantWeightEditService] Failed to update weight for variant ${variant.id}:`, result.error);
-                  return {
-                    variantId: variant.id,
-                    originalWeight: '0',
-                    originalWeightUnit: 'g',
-                    newWeight: '0',
-                    newWeightUnit: 'g',
-                    userErrors: [{ message: `Failed to update weight: ${result.error}` }],
-                    skipped: true
-                  };
-                }
-              } catch (error) {
-                console.error(`[VariantWeightEditService] Error updating variant ${variant.id}:`, error);
-                return {
-                  variantId: variant.id,
-                  originalWeight: '0',
-                  originalWeightUnit: 'g',
-                  newWeight: '0',
-                  newWeightUnit: 'g',
-                  userErrors: [{ message: error instanceof Error ? error.message : 'Unknown error during update' }],
-                  skipped: true
-                };
+          
+          // Récupérer les variantes via l'API REST
+          const variantsResponse = await fetch(
+            `https://${shop}/admin/api/2023-10/products/${productId}/variants.json`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Shopify-Access-Token': token
               }
-            })
+            }
           );
-
-          // Check if any variants were updated successfully
-          const updatedVariants = variantUpdates.filter(update => !update.skipped);
-          const hasSuccessfulUpdates = updatedVariants.length > 0;
           
-          return {
-            productId,
-            productTitle: productData.data?.product?.title || `Product ${productId}`,
-            success: hasSuccessfulUpdates,
-            variantUpdates,
-            skipped: false
+          if (!variantsResponse.ok) {
+            throw new Error(`Échec de la récupération des variantes via REST: ${variantsResponse.statusText}`);
+          }
+          
+          const variantsData = await variantsResponse.json();
+          console.log('[VariantWeightEditService] REST API variants response:', JSON.stringify(variantsData, null, 2));
+          
+          // Mapper les variantes REST vers le format attendu
+          const variants = variantsData.variants.map((variant: any) => ({
+            id: `gid://shopify/ProductVariant/${variant.id}`,
+            title: variant.title,
+            weight: variant.weight,
+            weightUnit: variant.weight_unit
+          }));
+          
+          // Mettre à jour productData avec les données REST
+          productData.data = {
+            product: {
+              ...productData.data?.product,
+              variants: {
+                edges: variants.map(v => ({ node: v }))
+              }
+            }
           };
         }
 
-        // Si GraphQL a fonctionné, continuer avec le traitement normal
-        const variants = productData.data.product.variants.edges.map((edge: any) => edge.node);
-        console.log(`[VariantWeightEditService] Found ${variants.length} variants for product ${productId}`);
+        // Si GraphQL a fonctionné ou après la récupération REST, continuer avec le traitement normal
+        const variants = productData.data.product.variants.edges.map((edge: any) => {
+          const variant = edge.node;
+          console.log('Processing variant:', variant);
+          return {
+            id: variant.id,
+            title: variant.title,
+            weight: variant.weight?.toString() || '0',
+            weightUnit: (variant.weightUnit || variant.weight_unit || 'g').toLowerCase()
+          };
+        });
+
+        console.log('[VariantWeightEditService] Processed variants:', JSON.stringify(variants, null, 2));
         
         // Skip product if it has no variants
         if (variants.length === 0) {

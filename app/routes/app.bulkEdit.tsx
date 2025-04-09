@@ -168,6 +168,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
               productType
               vendor
               status
+              tags
               featuredImage {
                 url
                 altText
@@ -313,6 +314,7 @@ export async function action({ request }: ActionFunctionArgs) {
             productType
             vendor
             status
+            tags
             featuredImage {
               url
               altText
@@ -321,6 +323,17 @@ export async function action({ request }: ActionFunctionArgs) {
               minVariantPrice {
                 amount
                 currencyCode
+              }
+            }
+            variants(first: 5) {
+              edges {
+                node {
+                  id
+                  price
+                  compareAtPrice
+                  barcode
+                  sku
+                }
               }
             }
           }
@@ -385,6 +398,7 @@ export async function action({ request }: ActionFunctionArgs) {
               productType
               vendor
               status
+              tags
               featuredImage {
                 url
                 altText
@@ -393,6 +407,17 @@ export async function action({ request }: ActionFunctionArgs) {
                 minVariantPrice {
                   amount
                   currencyCode
+                }
+              }
+              variants(first: 5) {
+                edges {
+                  node {
+                    id
+                    price
+                    compareAtPrice
+                    barcode
+                    sku
+                  }
                 }
               }
             }

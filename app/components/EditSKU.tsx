@@ -49,6 +49,13 @@ interface Product {
       currencyCode: string;
     };
   };
+  variants?: {
+    edges: Array<{
+      node: {
+        sku: string;
+      };
+    }>;
+  };
 }
 
 interface ActionData {
@@ -113,7 +120,8 @@ function EditSKU() {
           vendor: node.vendor,
           status: node.status,
           featuredImage: node.featuredImage,
-          priceRangeV2: node.priceRangeV2
+          priceRangeV2: node.priceRangeV2,
+          variants: node.variants
         }));
         setProducts(filteredProducts);
         setHasSearched(true);
@@ -285,6 +293,11 @@ function EditSKU() {
       <Text variant="bodySm" as="p">{product.productType || 'N/A'}</Text>
     </div>,
     <div>
+      <Text variant="bodySm" as="p">
+        {product.variants?.edges?.map(edge => edge.node.sku).join(', ') || 'No SKU'}
+      </Text>
+    </div>,
+    <div>
       <Badge tone={product.status === 'ACTIVE' ? 'success' : 'warning'}>
         {product.status}
       </Badge>
@@ -405,7 +418,13 @@ function EditSKU() {
 
   return (
     <BlockStack gap="500">
-      
+      {/* Progress Indicator */}
+        <BlockStack gap="200">
+          <InlineStack align="space-between" blockAlign="center">
+            <Badge tone="success">Step 1 of 2</Badge>
+            <ProgressBar progress={50} tone="success" />
+          </InlineStack>
+        </BlockStack>
       {/* Filter Section */}
       <Card>
         <BlockStack gap="400">
@@ -414,11 +433,15 @@ function EditSKU() {
               <Icon source={FilterIcon} tone="success" />
               <Text variant="headingSm" as="h2">Filter Products</Text>
             </InlineStack>
-            <Button variant="plain" onClick={handleClearFilters} icon={ResetIcon}>
-              Reset filters
+            <Button
+              icon={ResetIcon}
+              onClick={handleClearFilters}
+              disabled={!hasSearched}
+              tone="success"
+            >
+              Clear filters
             </Button>
           </InlineStack>
-          
           <Divider />
 
           <BlockStack gap="400">
@@ -477,8 +500,8 @@ function EditSKU() {
                       {products.length} {products.length === 1 ? 'product' : 'products'} found
                     </Text>
                     <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Type', 'Status', 'Price']}
+                      columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                      headings={['Product', 'Description', 'Type', 'SKU', 'Status', 'Price']}
                       rows={rows}
                     />
                     {products.length > itemsPerPage && (
