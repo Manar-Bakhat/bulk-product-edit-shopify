@@ -25,35 +25,48 @@ import {
   Badge,
   ProgressBar,
   Pagination,
-  Divider
+  Divider,
+  Autocomplete,
+  LegacyStack as Stack,
+  Tag
 } from "@shopify/polaris";
-import { FilterIcon, ResetIcon, EditIcon } from '@shopify/polaris-icons';
+import { FilterIcon, ResetIcon, EditIcon, SearchIcon } from '@shopify/polaris-icons';
 import { useSubmit, useActionData, useLoaderData } from "@remix-run/react";
 import Swal from 'sweetalert2';
+import { getShopifyTaxonomyCategories, getBasicCategories, getTaxonomyTree } from "../services/taxonomyService";
+import CategoryTreeView, { TaxonomyNode } from "./CategoryTreeView";
 
 interface Product {
   id: string;
   title: string;
   description: string;
+  handle: string;
   productType: string;
-  vendor: string;
   status: string;
-  featuredImage?: {
+  tags: string[];
+  vendor: string;
+  featuredImage: {
     url: string;
-    altText?: string;
-  };
+    altText: string;
+  } | null;
   priceRangeV2: {
     minVariantPrice: {
       amount: string;
       currencyCode: string;
     };
   };
-  collections?: {
+  collections: {
     edges: Array<{
       node: {
+        id: string;
         title: string;
       };
     }>;
+  };
+  productCategory?: {
+    productTaxonomyNode?: {
+      name: string;
+    };
   };
 }
 
@@ -70,6 +83,14 @@ interface ActionData {
   message?: string;
 }
 
+// Ajouter une interface pour les catégories hiérarchiques
+interface TaxonomyCategory {
+  id: string;
+  name: string;
+  level: number;
+  parentId?: string;
+}
+
 const EditProductCategory = () => {
   const [selectedField, setSelectedField] = useState('title');
   const [selectedCondition, setSelectedCondition] = useState('contains');
@@ -82,22 +103,220 @@ const EditProductCategory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
   const [newProductCategory, setNewProductCategory] = useState('');
+  const [taxonomyOptions, setTaxonomyOptions] = useState<{ label: string; value: string }[]>([]);
+  const [hierarchicalCategories, setHierarchicalCategories] = useState<TaxonomyCategory[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [hierarchyTree, setHierarchyTree] = useState<TaxonomyNode[]>([]);
+  const [isTreeView, setIsTreeView] = useState(true);
+
+  // Fonction pour organiser les catégories de manière hiérarchique
+  const organizeHierarchicalCategories = (categories: { label: string; value: string }[]) => {
+    const result: TaxonomyCategory[] = [];
+    
+    categories.forEach((category) => {
+      const { label, value } = category;
+      const parts = label.split(' > ');
+      let currentLevel = 0;
+      let parentId: string | undefined = undefined;
+      
+      // Traiter chaque niveau de la hiérarchie
+      parts.forEach((part, index) => {
+        if (index === parts.length - 1) {
+          // C'est la catégorie actuelle
+          result.push({
+            id: value,
+            name: part.trim(),
+            level: currentLevel,
+            parentId
+          });
+        } else {
+          // C'est un parent dans la hiérarchie
+          const parentCategory = {
+            id: `${value}_parent_${index}`,
+            name: part.trim(),
+            level: currentLevel,
+            parentId
+          };
+          
+          // Éviter les doublons
+          if (!result.some(cat => cat.name === parentCategory.name && cat.level === currentLevel)) {
+            result.push(parentCategory);
+          }
+          
+          // Le parent pour le prochain niveau
+          parentId = parentCategory.id;
+          currentLevel++;
+        }
+      });
+    });
+    
+    return result;
+  };
+
+  // Fonction utilitaire pour convertir TaxonomyNode[] en options pour l'autocomplete
+  const convertTreeToOptions = (nodes: TaxonomyNode[]): { label: string; value: string }[] => {
+    const result: { label: string; value: string }[] = [];
+    
+    const processNode = (node: TaxonomyNode) => {
+      result.push({
+        label: node.fullPath,
+        value: node.id
+      });
+      
+      node.children.forEach(child => processNode(child));
+    };
+    
+    nodes.forEach(node => processNode(node));
+    return result;
+  };
+
+  // Charge les catégories Shopify lors du chargement du composant
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        setIsLoadingCategories(true);
+        
+        // Essayer de charger l'arbre taxonomique
+        const tree = await getTaxonomyTree();
+        setHierarchyTree(tree);
+        
+        // Charger également la liste plate pour l'autocomplete
+        const categories = await getShopifyTaxonomyCategories();
+        
+        if (categories.length > 0) {
+          setTaxonomyOptions(categories);
+          setHierarchicalCategories(organizeHierarchicalCategories(categories));
+        } else {
+          // Fallback sur les catégories de base
+          const basicCategories = getBasicCategories();
+          // Convertir l'arbre en options pour l'autocomplete
+          const formattedBasicCategories = convertTreeToOptions(basicCategories);
+          setTaxonomyOptions(formattedBasicCategories);
+          setHierarchicalCategories(organizeHierarchicalCategories(formattedBasicCategories));
+        }
+      } catch (error) {
+        console.error('[EditProductCategory] Erreur lors du chargement des catégories:', error);
+        // En cas d'erreur, utiliser les catégories de base
+        const basicCategories = getBasicCategories();
+        // Convertir l'arbre en options pour l'autocomplete
+        const formattedBasicCategories = convertTreeToOptions(basicCategories);
+        setTaxonomyOptions(formattedBasicCategories);
+        setHierarchicalCategories(organizeHierarchicalCategories(formattedBasicCategories));
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    }
+    
+    loadCategories();
+  }, []);
+
+  // Transformer les catégories en options pour Autocomplete
+  const getAutocompleteOptions = () => {
+    const deduplicatedOptions = taxonomyOptions.reduce((acc, current) => {
+      // Prendre seulement la première partie pour créer les groupes de premier niveau
+      const topLevel = current.label.split(' > ')[0];
+      const existingGroup = acc.find(group => group.title === topLevel);
+      
+      if (existingGroup) {
+        existingGroup.options.push({
+          value: current.value,
+          label: current.label
+        });
+      } else {
+        acc.push({
+          title: topLevel,
+          options: [{
+            value: current.value,
+            label: current.label
+          }]
+        });
+      }
+      
+      return acc;
+    }, [] as { title: string; options: { value: string; label: string }[] }[]);
+    
+    return deduplicatedOptions;
+  };
+
+  // Filtrer les options basé sur la recherche
+  const filterOptions = (query: string) => {
+    if (!query) {
+      return getAutocompleteOptions().slice(0, 10); // Limiter à 10 catégories principales
+    }
+    
+    const normalizedQuery = query.toLowerCase();
+    
+    const filteredGroups = getAutocompleteOptions().map(group => {
+      const filteredOptions = group.options.filter(option =>
+        option.label.toLowerCase().includes(normalizedQuery)
+      );
+      
+      return {
+        ...group,
+        options: filteredOptions
+      };
+    }).filter(group => group.options.length > 0);
+    
+    return filteredGroups;
+  };
+
+  // Gérer la sélection de catégorie
+  const handleCategorySelect = (selected: string[]) => {
+    if (selected.length === 0) {
+      setSelectedCategory(undefined);
+      setSelectedOptions([]);
+      return;
+    }
+    
+    const categoryId = selected[0];
+    setSelectedCategory(categoryId);
+    setSelectedOptions(selected);
+    setNewProductCategory(categoryId);
+    
+    // Mettre à jour la valeur d'entrée avec le label complet
+    const selectedOption = taxonomyOptions.find(option => option.value === categoryId);
+    if (selectedOption) {
+      setInputValue(selectedOption.label);
+    }
+  };
+  
+  // Gérer la mise à jour de l'entrée de recherche
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
+  };
+
+  // Construire les options de l'Autocomplete
+  const autocompleteOptions = filterOptions(inputValue);
+  
+  // Convertir la sélection en tags pour l'affichage
+  const selectedTags = selectedOptions.map(option => {
+    const selectedOption = taxonomyOptions.find(opt => opt.value === option);
+    return selectedOption ? selectedOption.label : '';
+  });
 
   // Handle filtered products
   useEffect(() => {
     if (actionData) {
       if (actionData.data?.products?.edges) {
-        const filteredProducts = actionData.data.products.edges.map(({ node }) => ({
+        const filteredProducts = actionData.data.products.edges.map(({ node }) => {
+          return {
           id: node.id.replace('gid://shopify/Product/', ''),
           title: node.title,
           description: node.description,
+            handle: node.handle || "",
           productType: node.productType,
           vendor: node.vendor,
           status: node.status,
+            tags: node.tags || [],
           featuredImage: node.featuredImage,
           priceRangeV2: node.priceRangeV2,
-          collections: node.collections
-        }));
+            collections: node.collections,
+            productCategory: node.productCategory
+          } as Product;
+        });
         setProducts(filteredProducts);
         setHasSearched(true);
       }
@@ -185,9 +404,21 @@ const EditProductCategory = () => {
       <Text variant="bodySm" as="p">{product.productType || 'N/A'}</Text>
     </div>,
     <div>
+      {product.productCategory?.productTaxonomyNode?.name ? (
       <Text variant="bodySm" as="p">
-        {product.collections?.edges?.map(edge => edge.node.title).join(', ') || 'No categories'}
+          {product.productCategory.productTaxonomyNode.name}
       </Text>
+      ) : product.collections?.edges?.length > 0 ? (
+        <InlineStack gap="200">
+          {product.collections.edges.map((edge, index) => (
+            <Badge key={index} tone="info">
+              {edge.node.title}
+            </Badge>
+          ))}
+        </InlineStack>
+      ) : (
+        <Text variant="bodySm" as="p" tone="subdued">No category</Text>
+      )}
     </div>,
     <div>
       <Badge tone={product.status === 'ACTIVE' ? 'success' : 'warning'}>
@@ -278,11 +509,11 @@ const EditProductCategory = () => {
       return;
     }
 
-    if (!newProductCategory) {
-      // Show an error if no product category is entered
+    if (!selectedCategory) {
+      // Show an error if no product category is selected
       Swal.fire({
         title: 'Error',
-        text: 'Please enter a new product category.',
+        text: 'Please select a product taxonomy category.',
         icon: 'error',
         confirmButtonText: 'OK',
         confirmButtonColor: "#008060"
@@ -292,18 +523,28 @@ const EditProductCategory = () => {
 
     // Here you would add the logic to submit the form
     console.log('Starting bulk edit for product category:', {
-      newProductCategory,
+      selectedCategory,
       products: products.map(p => p.id)
     });
 
-    // Submit form logic would go here
+    // Submit form logic
     const formData = new FormData();
     formData.append("actionType", "bulkEdit");
     formData.append("section", "productCategory");
     formData.append("productIds", JSON.stringify(products.map(p => p.id)));
-    formData.append("newProductCategory", newProductCategory);
+    formData.append("newProductCategory", selectedCategory);
     
     submit(formData, { method: "post" });
+  };
+
+  // Gérer la sélection depuis l'arborescence
+  const handleTreeCategorySelect = (categoryId: string, fullPath: string) => {
+    setSelectedCategory(categoryId);
+    setNewProductCategory(categoryId);
+    setInputValue(fullPath);
+    
+    // Mettre également à jour les options sélectionnées pour l'autocomplete
+    setSelectedOptions([categoryId]);
   };
 
   return (
@@ -390,9 +631,12 @@ const EditProductCategory = () => {
                     </Text>
                     <DataTable
                       columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Type', 'Category', 'Status', 'Price']}
+                      headings={['Product', 'Description', 'Type', 'Categories', 'Status', 'Price']}
                       rows={rows}
                     />
+                    <Text variant="bodySm" as="p" tone="subdued">
+                      Note: Using official Shopify Product Taxonomy with over 10,500 standardized categories. Products can belong to both a Product Taxonomy category and multiple Collections.
+                    </Text>
                     {products.length > itemsPerPage && (
                       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
                         <Pagination
@@ -428,28 +672,99 @@ const EditProductCategory = () => {
               <Icon source={EditIcon} tone="success" />
               <Text variant="headingSm" as="h2">Edit Product Category</Text>
             </InlineStack>
+            <Button
+              onClick={() => setIsTreeView(!isTreeView)}
+              variant="plain"
+            >
+              {isTreeView ? 'Search View' : 'Tree View'}
+            </Button>
           </InlineStack>
           <Divider />
 
           <BlockStack gap="400">
-            <div style={{ maxWidth: '400px' }}>
-              <TextField
-                label="Set new product category"
-                value={newProductCategory}
-                onChange={setNewProductCategory}
-                autoComplete="off"
-                placeholder="Enter new product category..."
-              />
+            <div style={{ maxWidth: '650px' }}>
+              {isLoadingCategories ? (
+                <InlineStack align="center" blockAlign="center" gap="200">
+                  <Spinner size="small" />
+                  <Text as="p">Loading official Shopify Product Taxonomy categories...</Text>
+                </InlineStack>
+              ) : isTreeView ? (
+                <BlockStack gap="200">
+                  <Text as="p" variant="headingMd">
+                    Select a category from the tree
+                  </Text>
+                  <InlineStack>
+                    <Text as="p" variant="bodySm" tone="subdued">
+                      Parcourez les 26 catégories principales de Shopify (comme Vêtements, Électronique, etc.) et leurs 
+                      sous-catégories (plus de 10 500 au total). Cliquez sur les flèches ▼ pour développer chaque niveau 
+                      de l'arborescence.
+                    </Text>
+                  </InlineStack>
+                  <div style={{ marginTop: '12px' }}>
+                    <CategoryTreeView 
+                      categories={hierarchyTree}
+                      selectedCategoryId={selectedCategory}
+                      onSelectCategory={handleTreeCategorySelect}
+                    />
+                  </div>
+                </BlockStack>
+              ) : (
+                <BlockStack gap="200">
+                  <Text as="p" variant="headingMd">
+                    Search for a category
+                  </Text>
+                  <Text as="p" variant="bodySm" tone="subdued">
+                    Recherchez une catégorie spécifique parmi les 26 catégories principales et leurs plus de 10 500 sous-catégories 
+                    dans la taxonomie officielle de Shopify.
+                  </Text>
+                  <Autocomplete
+                    allowMultiple={false}
+                    options={autocompleteOptions}
+                    selected={selectedOptions}
+                    textField={
+                      <Autocomplete.TextField
+                        onChange={handleInputChange}
+                        label="Select a Shopify taxonomy category"
+                        value={inputValue}
+                        prefix={<Icon source={SearchIcon} />}
+                        placeholder="Search for a category..."
+                        autoComplete="off"
+                      />
+                    }
+                    onSelect={handleCategorySelect}
+                  />
+                  
+                  {selectedOptions.length > 0 && (
+                    <InlineStack gap="200" wrap={true}>
+                      {selectedTags.map((tag) => (
+                        <Tag key={tag}>{tag}</Tag>
+                      ))}
+                    </InlineStack>
+                  )}
+                  
+                  <Text as="p" variant="bodySm" tone="subdued">
+                    Each category represents an official Shopify product category that customers can use to find your products.
+                  </Text>
+                </BlockStack>
+              )}
             </div>
             
-            <Button 
-              variant="primary" 
-              onClick={handleBulkEdit} 
-              tone="success"
-              disabled={!newProductCategory}
-            >
-              Start bulk edit now
-            </Button>
+            <InlineStack gap="400" blockAlign="center">
+              <Button 
+                variant="primary" 
+                onClick={handleBulkEdit} 
+                tone="success"
+                disabled={!selectedCategory || isLoadingCategories}
+              >
+                Start bulk edit now
+              </Button>
+              
+              {selectedCategory && (
+                <Text variant="bodySm" as="p">
+                  Selected category: <strong>{taxonomyOptions.find(opt => opt.value === selectedCategory)?.label || selectedCategory}</strong>
+                </Text>
+              )}
+            </InlineStack>
           </BlockStack>
         </BlockStack>
       </Card>

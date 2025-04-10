@@ -149,14 +149,14 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           label: 'Edit Variant Weight',
           sectionId: 'variantWeight'
         },
-        /*
+
           {
           id: 'costPerItem',
           icon: MoneyIcon,
           label: 'Cost Per Item',
           sectionId: 'costPerItem'
         },
-        */
+
         
       ]
     }

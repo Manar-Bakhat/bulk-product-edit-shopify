@@ -52,6 +52,12 @@ interface Product {
       currencyCode: string;
     };
   };
+  inventoryItem?: {
+    unitCost?: {
+      amount: string;
+      currencyCode: string;
+    }
+  };
 }
 
 /**
@@ -239,6 +245,16 @@ function EditCostPerItem() {
           style: 'currency',
           currency: product.priceRangeV2.minVariantPrice.currencyCode
         }).format(parseFloat(product.priceRangeV2.minVariantPrice.amount))}
+      </Text>
+    </div>,
+    <div style={{ textAlign: 'right' }}>
+      <Text variant="bodyMd" as="p" fontWeight="semibold">
+        {product.inventoryItem?.unitCost 
+          ? new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: product.inventoryItem.unitCost.currencyCode
+            }).format(parseFloat(product.inventoryItem.unitCost.amount))
+          : 'Not set'}
       </Text>
     </div>
   ]);
@@ -448,8 +464,8 @@ function EditCostPerItem() {
                       {products.length} {products.length === 1 ? 'product' : 'products'} found
                     </Text>
                     <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Type', 'Status', 'Price']}
+                      columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                      headings={['Product', 'Description', 'Type', 'Status', 'Price', 'Cost per item']}
                       rows={rows}
                     />
                     {products.length > itemsPerPage && (
