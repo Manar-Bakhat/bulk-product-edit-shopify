@@ -693,7 +693,7 @@ export async function handleVariantWeightEdit(request: Request, formData: FormDa
             product: {
               ...productData.data?.product,
               variants: {
-                edges: variants.map(v => ({ node: v }))
+                edges: variants.map((v: any) => ({ node: v }))
               }
             }
           };

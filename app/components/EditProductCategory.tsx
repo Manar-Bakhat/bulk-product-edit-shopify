@@ -728,7 +728,7 @@ const EditProductCategory = () => {
                         value={inputValue}
                         prefix={<Icon source={SearchIcon} />}
                         placeholder="Search for a category..."
-                        autoComplete="off"
+                autoComplete="off"
                       />
                     }
                     onSelect={handleCategorySelect}
@@ -750,14 +750,14 @@ const EditProductCategory = () => {
             </div>
             
             <InlineStack gap="400" blockAlign="center">
-              <Button 
-                variant="primary" 
-                onClick={handleBulkEdit} 
-                tone="success"
+            <Button 
+              variant="primary" 
+              onClick={handleBulkEdit} 
+              tone="success"
                 disabled={!selectedCategory || isLoadingCategories}
-              >
-                Start bulk edit now
-              </Button>
+            >
+              Start bulk edit now
+            </Button>
               
               {selectedCategory && (
                 <Text variant="bodySm" as="p">

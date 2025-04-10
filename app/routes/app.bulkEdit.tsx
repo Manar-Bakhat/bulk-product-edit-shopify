@@ -46,6 +46,7 @@ import EditSKU from "../components/EditSKU";
 import EditBarcode from "../components/EditBarcode";
 import EditVariantWeight from "../components/EditVariantWeight";
 import EditCostPerItem from "../components/EditCostPerItem";
+import EditVariantTracksInventory from "../components/EditVariantTracksInventory";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
@@ -63,6 +64,7 @@ import { handleSkuEdit } from "../services/skuEditService";
 import { handleBarcodeEdit } from "../services/barcodeEditService";
 import { handleVariantWeightEdit } from "../services/variantWeightEditService";
 import { handleCostPerItemEdit } from "../services/costPerItemEditService";
+import { handleVariantTracksInventoryEdit } from "../services/variantTracksInventoryService";
 
 interface Product {
   id: string;
@@ -282,6 +284,18 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       
       return handleCostPerItemEdit(request, formData);
+    } else if (section === "variantTracksInventory") {
+      // Validate required fields
+      const tracksInventory = formData.get("tracksInventory") as string;
+      
+      if (!tracksInventory) {
+        return json(
+          { success: false, error: "Inventory tracking value is required" },
+          { status: 400 }
+        );
+      }
+      
+      return handleVariantTracksInventoryEdit(request, formData);
     }
   }
 
@@ -545,6 +559,8 @@ export default function BulkEdit() {
         return <EditVariantWeight />;
       case "costPerItem":
         return <EditCostPerItem />;
+      case "variantTracksInventory":
+        return <EditVariantTracksInventory />;
       default:
         return null;
     }

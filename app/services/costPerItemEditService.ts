@@ -219,7 +219,7 @@ export async function handleCostPerItemEdit(request: Request, formData: FormData
           }
         );
 
-        const productData = await getProductResponse.json();
+        const productData = await getProductResponse.json() as GraphQLResponse;
         console.log('[CostPerItemService] GraphQL response:', productData);
         
         if (productData.errors) {
@@ -310,7 +310,7 @@ export async function handleCostPerItemEdit(request: Request, formData: FormData
                   }
                 );
                 
-                const updateData = await updateResponse.json();
+                const updateData = await updateResponse.json() as GraphQLResponse;
                 console.log('[CostPerItemService] Update response:', updateData);
                 
                 if (updateData.errors) {
@@ -318,9 +318,10 @@ export async function handleCostPerItemEdit(request: Request, formData: FormData
                   throw new Error(updateData.errors[0]?.message || 'GraphQL update failed');
                 }
                 
-                if (updateData.data?.inventoryItemUpdate?.userErrors?.length > 0) {
+                if (updateData.data?.inventoryItemUpdate?.userErrors && 
+                    updateData.data.inventoryItemUpdate.userErrors.length > 0) {
                   console.error('[CostPerItemService] User errors during update:', updateData.data.inventoryItemUpdate.userErrors);
-                  throw new Error(updateData.data.inventoryItemUpdate.userErrors[0].message);
+                  throw new Error(updateData.data.inventoryItemUpdate.userErrors[0]?.message || 'Update failed with user errors');
                 }
                 
                 const newCost = updateData.data?.inventoryItemUpdate?.inventoryItem?.unitCost?.amount;
@@ -433,7 +434,7 @@ export async function handleCostPerItemEdit(request: Request, formData: FormData
         failed: failedVariants.length
       },
       results: results,
-      message: `Successfully updated cost for ${successfulVariants.length} variants across ${successfulProducts.length} products.`,
+      message: `Successfully updated cost per item for products.`,
       partialFailure: failedVariants.length > 0 || failedProducts.length > 0
     });
   } catch (error) {
