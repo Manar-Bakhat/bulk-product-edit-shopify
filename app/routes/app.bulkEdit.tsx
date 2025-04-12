@@ -363,6 +363,7 @@ export async function action({ request }: ActionFunctionArgs) {
                       currencyCode
                     }
                     tracked
+                    requiresShipping
                   }
                 }
               }
@@ -450,6 +451,7 @@ export async function action({ request }: ActionFunctionArgs) {
                         currencyCode
                       }
                       tracked
+                      requiresShipping
                     }
                   }
                 }

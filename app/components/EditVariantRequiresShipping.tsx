@@ -53,7 +53,10 @@ interface Product {
       node: {
         id: string;
         title: string;
-        requiresShipping: boolean;
+        inventoryItem?: {
+          id: string;
+          requiresShipping: boolean;
+        };
       };
     }>;
   };
@@ -84,6 +87,8 @@ function EditVariantRequiresShipping() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
   const [requiresShipping, setRequiresShipping] = useState('true');
+  // Track which products have been modified
+  const [modifiedProducts, setModifiedProducts] = useState<{[key: string]: boolean}>({});
 
   // Handle filtered products
   useEffect(() => {
@@ -103,14 +108,16 @@ function EditVariantRequiresShipping() {
         setProducts(filteredProducts);
         setHasSearched(true);
         
-        // Debug log to check variant data
-        console.log('[EditVariantRequiresShipping] Filtered products with variants:', 
+        // More detailed debug log to check shipping status
+        console.log('[EditVariantRequiresShipping] Filtered products with shipping status:', 
           filteredProducts.map(p => ({
             id: p.id,
             title: p.title,
             hasVariants: !!p.variants,
             variantCount: p.variants?.edges?.length || 0,
-            requiresShipping: p.variants?.edges[0]?.node?.requiresShipping
+            firstVariant: p.variants?.edges?.[0]?.node,
+            inventoryItem: p.variants?.edges?.[0]?.node?.inventoryItem,
+            requiresShipping: p.variants?.edges?.[0]?.node?.inventoryItem?.requiresShipping
           }))
         );
       }
@@ -118,16 +125,38 @@ function EditVariantRequiresShipping() {
     }
   }, [actionData]);
 
+  // Reset form after submission
+  const resetForm = () => {
+    setRequiresShipping(''); // Clear the selection
+  };
+
   // Handle action data response for success/error
   useEffect(() => {
     if (actionData) {
       console.log('[EditVariantRequiresShipping] Received action data:', actionData);
+      setIsLoading(false);
       
       if (actionData.success) {
         console.log('[EditVariantRequiresShipping] Bulk edit successful!');
+        
+        // Record which products were updated and their new shipping status value
+        const updatedProductIds = products.map(p => p.id);
+        const newRequiresShipping = requiresShipping === 'true';
+        
+        // Update our local tracking of modified products
+        const updates = {} as {[key: string]: boolean};
+        updatedProductIds.forEach(id => {
+          updates[id] = newRequiresShipping;
+        });
+        
+        setModifiedProducts(prev => ({
+          ...prev,
+          ...updates
+        }));
+        
         // Reset form fields
-        setRequiresShipping('true');
-
+        resetForm();
+        
         // Show success message
         Swal.fire({
           title: 'Success!',
@@ -147,7 +176,7 @@ function EditVariantRequiresShipping() {
         });
       }
     }
-  }, [actionData]);
+  }, [actionData, products, requiresShipping]);
 
   // Calculate pagination
   const totalPages = Math.ceil(products.length / itemsPerPage);
@@ -213,15 +242,28 @@ function EditVariantRequiresShipping() {
     <div>
       {/* Extract shipping requirement status, defaulting to "Unknown" if not available */}
       {(() => {
-        // Get requires shipping status from variants if available
-        const requiresShippingValue = product.variants?.edges?.[0]?.node?.requiresShipping;
+        // Check if this product has been modified by recent bulk edit
+        if (product.id in modifiedProducts) {
+          const updatedValue = modifiedProducts[product.id];
+          return (
+            <Badge tone={updatedValue ? 'success' : 'critical'}>
+              {updatedValue ? 'Yes' : 'No'}
+            </Badge>
+          );
+        }
+        
+        // If not modified, get requires shipping status from variants
+        const variantNode = product.variants?.edges?.[0]?.node;
+        const requiresShippingValue = variantNode?.inventoryItem?.requiresShipping;
         
         // If we have a definite true/false value
-        if (requiresShippingValue === true || requiresShippingValue === false) {
+        if (requiresShippingValue === true) {
           return (
-            <Badge tone={requiresShippingValue ? 'success' : 'critical'}>
-              {requiresShippingValue ? 'Yes' : 'No'}
-            </Badge>
+            <Badge tone="success">Yes</Badge>
+          );
+        } else if (requiresShippingValue === false) {
+          return (
+            <Badge tone="critical">No</Badge>
           );
         }
         
