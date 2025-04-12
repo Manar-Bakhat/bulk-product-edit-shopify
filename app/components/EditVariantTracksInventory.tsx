@@ -100,10 +100,22 @@ function EditVariantTracksInventory() {
           vendor: node.vendor,
           status: node.status,
           featuredImage: node.featuredImage,
-          priceRangeV2: node.priceRangeV2
+          priceRangeV2: node.priceRangeV2,
+          variants: node.variants // Make sure to include the variants data
         }));
         setProducts(filteredProducts);
         setHasSearched(true);
+        
+        // Debug log to check variant data
+        console.log('[EditVariantTracksInventory] Filtered products with variants:', 
+          filteredProducts.map(p => ({
+            id: p.id,
+            title: p.title,
+            hasVariants: !!p.variants,
+            variantCount: p.variants?.edges?.length || 0,
+            tracked: p.variants?.edges[0]?.node?.inventoryItem?.tracked
+          }))
+        );
       }
       setIsLoading(false);
     }
@@ -200,6 +212,25 @@ function EditVariantTracksInventory() {
           currency: product.priceRangeV2.minVariantPrice.currencyCode
         }).format(parseFloat(product.priceRangeV2.minVariantPrice.amount))}
       </Text>
+    </div>,
+    <div>
+      {/* Extract tracking status from variants, defaulting to "Unknown" if not available */}
+      {(() => {
+        // Get tracked status from variants if available
+        const isTracked = product.variants?.edges?.[0]?.node?.inventoryItem?.tracked;
+        
+        // If we have a definite true/false value
+        if (isTracked === true || isTracked === false) {
+          return (
+            <Badge tone={isTracked ? 'success' : 'critical'}>
+              {isTracked ? 'Yes' : 'No'}
+            </Badge>
+          );
+        }
+        
+        // If no tracking data is available
+        return <Text variant="bodySm" tone="subdued" as="p">Unknown</Text>;
+      })()}
     </div>
   ]);
 
@@ -302,34 +333,21 @@ function EditVariantTracksInventory() {
       return;
     }
 
-    // Confirm action with the user
-    Swal.fire({
-      title: 'Confirm Inventory Tracking Update',
-      html: `You are about to set inventory tracking to <strong>${tracksInventory === 'true' ? 'Enabled' : 'Disabled'}</strong> for ${products.length} product${products.length > 1 ? 's' : ''}. This will affect all variants of these products. Are you sure you want to continue?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, update inventory tracking',
-      cancelButtonText: 'Cancel',
-      confirmButtonColor: "#008060"
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Submit form logic would go here
-        console.log('Starting bulk edit for inventory tracking:', {
-          tracksInventory,
-          products: products.map(p => p.id)
-        });
-
-        setIsLoading(true);
-        
-        const formData = new FormData();
-        formData.append("actionType", "bulkEdit");
-        formData.append("section", "variantTracksInventory");
-        formData.append("productIds", JSON.stringify(products.map(p => p.id)));
-        formData.append("tracksInventory", tracksInventory);
-        
-        submit(formData, { method: "post" });
-      }
+    // Submit form logic immediately without confirmation
+    console.log('Starting bulk edit for inventory tracking:', {
+      tracksInventory,
+      products: products.map(p => p.id)
     });
+
+    setIsLoading(true);
+    
+    const formData = new FormData();
+    formData.append("actionType", "bulkEdit");
+    formData.append("section", "variantTracksInventory");
+    formData.append("productIds", JSON.stringify(products.map(p => p.id)));
+    formData.append("tracksInventory", tracksInventory);
+    
+    submit(formData, { method: "post" });
   };
 
   return (
@@ -423,8 +441,8 @@ function EditVariantTracksInventory() {
                 {products.length > 0 ? (
                   <BlockStack gap="400">
                     <DataTable
-                      columnContentTypes={['text', 'text', 'text', 'text', 'text']}
-                      headings={['Product', 'Description', 'Product Type', 'Status', 'Price']}
+                      columnContentTypes={['text', 'text', 'text', 'text', 'text', 'text']}
+                      headings={['Product', 'Description', 'Product Type', 'Status', 'Price', 'Tracks Inventory']}
                       rows={rows}
                       hoverable
                       defaultSortDirection="descending"
@@ -513,86 +531,7 @@ function EditVariantTracksInventory() {
           </BlockStack>
         </BlockStack>
       </Card>
-      
-      {/* Summary Section */}
-      <Card>
-        <BlockStack gap="400">
-          <InlineStack align="space-between" blockAlign="center">
-            <InlineStack gap="300" blockAlign="center">
-              <Icon source={InventoryIcon} tone="success" />
-              <Text variant="headingSm" as="h2">Summary: Tracks Inventory Update</Text>
-            </InlineStack>
-          </InlineStack>
-          <Divider />
-
-          <BlockStack gap="400">
-            <div style={{ maxWidth: '650px' }}>
-              <BlockStack gap="300">
-                <Text as="p" variant="headingMd">
-                  Summary of changes
-                </Text>
-                
-                <InlineStack gap="400" align="space-between" blockAlign="center">
-                  <Text as="p" variant="bodyMd">
-                    Current selection:
-                  </Text>
-                  <Badge tone={tracksInventory === 'true' ? 'success' : 'critical'}>
-                    {tracksInventory === 'true' ? 'Tracks Inventory: Yes' : 'Tracks Inventory: No'}
-                  </Badge>
-                </InlineStack>
-                
-                <InlineStack gap="400" align="space-between" blockAlign="center">
-                  <Text as="p" variant="bodyMd">
-                    Products affected:
-                  </Text>
-                  <Text as="p" variant="bodyMd" fontWeight="bold">
-                    {products.length}
-                  </Text>
-                </InlineStack>
-                
-                <InlineStack gap="400" align="space-between" blockAlign="center">
-                  <Text as="p" variant="bodyMd">
-                    Estimated variants affected:
-                  </Text>
-                  <Text as="p" variant="bodyMd" fontWeight="bold">
-                    {products.reduce((total, product) => 
-                      total + (product.variants?.edges?.length || 1), 0)}
-                  </Text>
-                </InlineStack>
-                
-                <Text as="p" variant="bodySm" tone="subdued">
-                  Select an option from the dropdown above and click "Start bulk edit now" to apply the changes.
-                  This will update the inventory tracking setting for all variants of the selected products.
-                </Text>
-                
-                <div style={{ marginTop: '16px' }}>
-                  <Select
-                    label="Quick select"
-                    options={[
-                      { label: 'Track inventory (recommended)', value: 'true' },
-                      { label: 'Do not track inventory', value: 'false' }
-                    ]}
-                    value={tracksInventory}
-                    onChange={setTracksInventory}
-                    placeholder="Select an option"
-                  />
-                </div>
-                
-                <InlineStack gap="300" blockAlign="center">
-                  <Button 
-                    variant="primary" 
-                    onClick={handleBulkEdit} 
-                    tone="success"
-                    disabled={isLoading}
-                  >
-                    Update tracks inventory to {tracksInventory === 'true' ? 'Yes' : 'No'}
-                  </Button>
-                </InlineStack>
-              </BlockStack>
-            </div>
-          </BlockStack>
-        </BlockStack>
-      </Card>
+    
     </BlockStack>
   );
 }

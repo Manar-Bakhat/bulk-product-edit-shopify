@@ -339,14 +339,17 @@ export async function action({ request }: ActionFunctionArgs) {
                 currencyCode
               }
             }
-            variants(first: 5) {
+            variants(first: 1) {
               edges {
                 node {
                   id
-                  price
-                  compareAtPrice
-                  barcode
-                  sku
+                  inventoryItem {
+                    unitCost {
+                      amount
+                      currencyCode
+                    }
+                    tracked
+                  }
                 }
               }
             }
@@ -423,14 +426,17 @@ export async function action({ request }: ActionFunctionArgs) {
                   currencyCode
                 }
               }
-              variants(first: 5) {
+              variants(first: 1) {
                 edges {
                   node {
                     id
-                    price
-                    compareAtPrice
-                    barcode
-                    sku
+                    inventoryItem {
+                      unitCost {
+                        amount
+                        currencyCode
+                      }
+                      tracked
+                    }
                   }
                 }
               }

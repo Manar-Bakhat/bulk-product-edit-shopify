@@ -85,6 +85,91 @@ export async function handleVariantTracksInventoryEdit(request: Request, formDat
   const trackingEnabled = tracksInventory === 'true';
   console.log(`[VariantTracksInventoryService] Processing ${productIds.length} products, setting tracking to ${trackingEnabled ? 'enabled' : 'disabled'}`);
   
+  // Fallback REST API method for updating inventory tracking
+  async function fallbackUpdateInventoryTracking(variantId: string, tracked: boolean) {
+    try {
+      // Extract numeric ID from the Shopify gid format
+      const numericId = variantId.split('/').pop() || '';
+      if (!numericId) {
+        throw new Error('Invalid variant ID format');
+      }
+
+      console.log(`[VariantTracksInventoryService] Using REST API to update variant ${numericId} tracking to ${tracked}`);
+      
+      const shop = session.shop;
+      const token = session.accessToken;
+      
+      if (!token) {
+        throw new Error('Shopify access token not available');
+      }
+      
+      // First get the variant information to get the inventory_item_id
+      const getVariantResponse = await fetch(
+        `https://${shop}/admin/api/2023-10/variants/${numericId}.json`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Shopify-Access-Token': token
+          }
+        }
+      );
+      
+      if (!getVariantResponse.ok) {
+        const errorData = await getVariantResponse.json();
+        throw new Error(`REST API request failed: ${JSON.stringify(errorData)}`);
+      }
+      
+      const variantData = await getVariantResponse.json();
+      const inventoryItemId = variantData.variant.inventory_item_id;
+      
+      if (!inventoryItemId) {
+        throw new Error('No inventory item ID found for variant');
+      }
+      
+      console.log(`[VariantTracksInventoryService] Found inventory item ID ${inventoryItemId} for variant ${numericId}`);
+      
+      // Update the inventory item tracking
+      const updateResponse = await fetch(
+        `https://${shop}/admin/api/2023-10/inventory_items/${inventoryItemId}.json`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Shopify-Access-Token': token
+          },
+          body: JSON.stringify({
+            inventory_item: {
+              id: inventoryItemId,
+              tracked: tracked
+            }
+          })
+        }
+      );
+      
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        throw new Error(`REST API tracking update failed: ${JSON.stringify(errorData)}`);
+      }
+      
+      const updateData = await updateResponse.json();
+      console.log(`[VariantTracksInventoryService] REST API response:`, updateData);
+      
+      return {
+        success: true,
+        variantId: variantId,
+        newTracked: updateData.inventory_item.tracked
+      };
+    } catch (error) {
+      console.error(`[VariantTracksInventoryService] REST API fallback also failed:`, error);
+      return {
+        success: false,
+        variantId: variantId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+  
   try {
     // Process all products
     const results = await Promise.all(
@@ -241,14 +326,24 @@ export async function handleVariantTracksInventoryEdit(request: Request, formDat
                   newTracked: newTracked,
                   skipped: false
                 };
-              } catch (error) {
-                console.error(`[VariantTracksInventoryService] Error updating variant ${variant.id}:`, error);
-                return {
-                  variantId: variant.id,
-                  success: false,
-                  error: error instanceof Error ? error.message : 'Unknown error',
-                  skipped: false
-                };
+              } catch (graphqlError) {
+                console.error(`[VariantTracksInventoryService] GraphQL update failed for variant ${variant.id}, trying REST fallback:`, graphqlError);
+                
+                // Try REST API as fallback
+                const fallbackResult = await fallbackUpdateInventoryTracking(variant.id, trackingEnabled);
+                
+                if (fallbackResult.success) {
+                  return {
+                    variantId: variant.id,
+                    variantTitle: variant.title,
+                    success: true,
+                    originalTracked: currentTracked,
+                    newTracked: fallbackResult.newTracked,
+                    usedFallback: true
+                  };
+                } else {
+                  throw new Error(fallbackResult.error || 'Both GraphQL and REST API updates failed');
+                }
               }
             } catch (error) {
               console.error(`[VariantTracksInventoryService] Error processing variant ${variant.id}:`, error);
@@ -323,7 +418,7 @@ export async function handleVariantTracksInventoryEdit(request: Request, formDat
     // Full success (including cases where some variants were skipped because they already had the right tracking setting)
     return json({
       success: true,
-      message: `Inventory tracking ${trackingEnabled ? 'enabled' : 'disabled'} for ${successfulVariants.length} variants across ${successfulProducts.length} products. ${skippedVariants.length} variants were already up to date.`
+      message: `Inventory tracking ${trackingEnabled ? 'enabled' : 'disabled'} successfully`
     });
     
   } catch (error) {
