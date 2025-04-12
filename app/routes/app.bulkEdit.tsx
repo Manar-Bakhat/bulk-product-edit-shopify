@@ -47,6 +47,7 @@ import EditBarcode from "../components/EditBarcode";
 import EditVariantWeight from "../components/EditVariantWeight";
 import EditCostPerItem from "../components/EditCostPerItem";
 import EditVariantTracksInventory from "../components/EditVariantTracksInventory";
+import EditVariantRequiresShipping from "../components/EditVariantRequiresShipping";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { useSearchParams, useNavigate } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
@@ -65,6 +66,7 @@ import { handleBarcodeEdit } from "../services/barcodeEditService";
 import { handleVariantWeightEdit } from "../services/variantWeightEditService";
 import { handleCostPerItemEdit } from "../services/costPerItemEditService";
 import { handleVariantTracksInventoryEdit } from "../services/variantTracksInventoryService";
+import { handleVariantRequiresShippingEdit } from "../services/variantRequiresShippingService";
 
 interface Product {
   id: string;
@@ -296,6 +298,18 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       
       return handleVariantTracksInventoryEdit(request, formData);
+    } else if (section === "variantRequiresShipping") {
+      // Validate required fields
+      const requiresShipping = formData.get("requiresShipping") as string;
+      
+      if (!requiresShipping) {
+        return json(
+          { success: false, error: "Shipping requirement value is required" },
+          { status: 400 }
+        );
+      }
+      
+      return handleVariantRequiresShippingEdit(request, formData);
     }
   }
 
@@ -567,6 +581,8 @@ export default function BulkEdit() {
         return <EditCostPerItem />;
       case "variantTracksInventory":
         return <EditVariantTracksInventory />;
+      case "variantRequiresShipping":
+        return <EditVariantRequiresShipping />;
       default:
         return null;
     }

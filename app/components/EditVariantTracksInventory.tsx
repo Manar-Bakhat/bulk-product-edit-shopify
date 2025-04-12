@@ -334,20 +334,20 @@ function EditVariantTracksInventory() {
     }
 
     // Submit form logic immediately without confirmation
-    console.log('Starting bulk edit for inventory tracking:', {
-      tracksInventory,
-      products: products.map(p => p.id)
-    });
+        console.log('Starting bulk edit for inventory tracking:', {
+          tracksInventory,
+          products: products.map(p => p.id)
+        });
 
-    setIsLoading(true);
-    
-    const formData = new FormData();
-    formData.append("actionType", "bulkEdit");
-    formData.append("section", "variantTracksInventory");
-    formData.append("productIds", JSON.stringify(products.map(p => p.id)));
-    formData.append("tracksInventory", tracksInventory);
-    
-    submit(formData, { method: "post" });
+        setIsLoading(true);
+        
+        const formData = new FormData();
+        formData.append("actionType", "bulkEdit");
+        formData.append("section", "variantTracksInventory");
+        formData.append("productIds", JSON.stringify(products.map(p => p.id)));
+        formData.append("tracksInventory", tracksInventory);
+        
+        submit(formData, { method: "post" });
   };
 
   return (

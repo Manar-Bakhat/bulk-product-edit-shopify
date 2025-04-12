@@ -27,7 +27,8 @@ import {
   BarcodeIcon,
   MobileIcon,
   ProductIcon,
-  MoneyIcon
+  MoneyIcon,
+  GlobeIcon
 } from '@shopify/polaris-icons';
 
 interface SidebarSection {
@@ -154,6 +155,12 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           icon: InventoryIcon,
           label: 'Variant Tracks Inventory',
           sectionId: 'variantTracksInventory'
+        },
+        {
+          id: 'variantRequiresShipping',
+          icon: GlobeIcon,
+          label: 'Variant Requires Shipping',
+          sectionId: 'variantRequiresShipping'
         },
         {
           id: 'costPerItem',
