@@ -353,11 +353,31 @@ export async function action({ request }: ActionFunctionArgs) {
                 currencyCode
               }
             }
+            productCategory {
+              productTaxonomyNode {
+                id
+                name
+              }
+            }
+            collections(first: 5) {
+              edges {
+                node {
+                  id 
+                  title
+                }
+              }
+            }
             variants(first: 1) {
               edges {
                 node {
                   id
                   inventoryItem {
+                    measurement {
+                      weight {
+                        value
+                        unit
+                      }
+                    }
                     unitCost {
                       amount
                       currencyCode
@@ -439,6 +459,20 @@ export async function action({ request }: ActionFunctionArgs) {
                 minVariantPrice {
                   amount
                   currencyCode
+                }
+              }
+              productCategory {
+                productTaxonomyNode {
+                  id
+                  name
+                }
+              }
+              collections(first: 5) {
+                edges {
+                  node {
+                    id 
+                    title
+                  }
                 }
               }
               variants(first: 1) {

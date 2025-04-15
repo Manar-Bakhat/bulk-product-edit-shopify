@@ -301,22 +301,20 @@ const EditProductCategory = () => {
   useEffect(() => {
     if (actionData) {
       if (actionData.data?.products?.edges) {
-        const filteredProducts = actionData.data.products.edges.map(({ node }) => {
-          return {
+        const filteredProducts = actionData.data.products.edges.map(({ node }) => ({
           id: node.id.replace('gid://shopify/Product/', ''),
           title: node.title,
           description: node.description,
-            handle: node.handle || "",
+          handle: node.handle || '',
           productType: node.productType,
           vendor: node.vendor,
           status: node.status,
-            tags: node.tags || [],
+          tags: node.tags || [],
           featuredImage: node.featuredImage,
           priceRangeV2: node.priceRangeV2,
-            collections: node.collections,
-            productCategory: node.productCategory
-          } as Product;
-        });
+          collections: node.collections || { edges: [] },
+          productCategory: node.productCategory
+        }));
         setProducts(filteredProducts);
         setHasSearched(true);
       }
@@ -405,9 +403,9 @@ const EditProductCategory = () => {
     </div>,
     <div>
       {product.productCategory?.productTaxonomyNode?.name ? (
-      <Text variant="bodySm" as="p">
+        <Badge tone="info">
           {product.productCategory.productTaxonomyNode.name}
-      </Text>
+        </Badge>
       ) : product.collections?.edges?.length > 0 ? (
         <InlineStack gap="200">
           {product.collections.edges.map((edge, index) => (
@@ -641,10 +639,10 @@ const EditProductCategory = () => {
                       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
                         <Pagination
                           label={`${currentPage} of ${totalPages}`}
+                          onPrevious={currentPage > 1 ? () => setCurrentPage(prevPage => prevPage - 1) : undefined}
+                          onNext={currentPage < totalPages ? () => setCurrentPage(prevPage => prevPage + 1) : undefined}
                           hasPrevious={currentPage > 1}
-                          onPrevious={() => setCurrentPage(currentPage - 1)}
                           hasNext={currentPage < totalPages}
-                          onNext={() => setCurrentPage(currentPage + 1)}
                         />
                       </div>
                     )}
@@ -655,121 +653,8 @@ const EditProductCategory = () => {
           </BlockStack>
         </BlockStack>
       </Card>
-
-      {/* Progress Indicator for Step 2 */}
-      <BlockStack gap="200">
-        <InlineStack align="space-between" blockAlign="center">
-          <Badge tone="success">Step 2 of 2</Badge>
-          <ProgressBar progress={100} tone="success" />
-        </InlineStack>
-      </BlockStack>
-
-      {/* Edit Product Category Section */}
-      <Card>
-        <BlockStack gap="400">
-          <InlineStack align="space-between" blockAlign="center">
-            <InlineStack gap="300" blockAlign="center">
-              <Icon source={EditIcon} tone="success" />
-              <Text variant="headingSm" as="h2">Edit Product Category</Text>
-            </InlineStack>
-            <Button
-              onClick={() => setIsTreeView(!isTreeView)}
-              variant="plain"
-            >
-              {isTreeView ? 'Search View' : 'Tree View'}
-            </Button>
-          </InlineStack>
-          <Divider />
-
-          <BlockStack gap="400">
-            <div style={{ maxWidth: '650px' }}>
-              {isLoadingCategories ? (
-                <InlineStack align="center" blockAlign="center" gap="200">
-                  <Spinner size="small" />
-                  <Text as="p">Loading official Shopify Product Taxonomy categories...</Text>
-                </InlineStack>
-              ) : isTreeView ? (
-                <BlockStack gap="200">
-                  <Text as="p" variant="headingMd">
-                    Select a category from the tree
-                  </Text>
-                  <InlineStack>
-                    <Text as="p" variant="bodySm" tone="subdued">
-                      Parcourez les 26 catégories principales de Shopify (comme Vêtements, Électronique, etc.) et leurs 
-                      sous-catégories (plus de 10 500 au total). Cliquez sur les flèches ▼ pour développer chaque niveau 
-                      de l'arborescence.
-                    </Text>
-                  </InlineStack>
-                  <div style={{ marginTop: '12px' }}>
-                    <CategoryTreeView 
-                      categories={hierarchyTree}
-                      selectedCategoryId={selectedCategory}
-                      onSelectCategory={handleTreeCategorySelect}
-                    />
-                  </div>
-                </BlockStack>
-              ) : (
-                <BlockStack gap="200">
-                  <Text as="p" variant="headingMd">
-                    Search for a category
-                  </Text>
-                  <Text as="p" variant="bodySm" tone="subdued">
-                    Recherchez une catégorie spécifique parmi les 26 catégories principales et leurs plus de 10 500 sous-catégories 
-                    dans la taxonomie officielle de Shopify.
-                  </Text>
-                  <Autocomplete
-                    allowMultiple={false}
-                    options={autocompleteOptions}
-                    selected={selectedOptions}
-                    textField={
-                      <Autocomplete.TextField
-                        onChange={handleInputChange}
-                        label="Select a Shopify taxonomy category"
-                        value={inputValue}
-                        prefix={<Icon source={SearchIcon} />}
-                        placeholder="Search for a category..."
-                autoComplete="off"
-                      />
-                    }
-                    onSelect={handleCategorySelect}
-                  />
-                  
-                  {selectedOptions.length > 0 && (
-                    <InlineStack gap="200" wrap={true}>
-                      {selectedTags.map((tag) => (
-                        <Tag key={tag}>{tag}</Tag>
-                      ))}
-                    </InlineStack>
-                  )}
-                  
-                  <Text as="p" variant="bodySm" tone="subdued">
-                    Each category represents an official Shopify product category that customers can use to find your products.
-                  </Text>
-                </BlockStack>
-              )}
-            </div>
-            
-            <InlineStack gap="400" blockAlign="center">
-            <Button 
-              variant="primary" 
-              onClick={handleBulkEdit} 
-              tone="success"
-                disabled={!selectedCategory || isLoadingCategories}
-            >
-              Start bulk edit now
-            </Button>
-              
-              {selectedCategory && (
-                <Text variant="bodySm" as="p">
-                  Selected category: <strong>{taxonomyOptions.find(opt => opt.value === selectedCategory)?.label || selectedCategory}</strong>
-                </Text>
-              )}
-            </InlineStack>
-          </BlockStack>
-        </BlockStack>
-      </Card>
     </BlockStack>
   );
-}
+};
 
-export default EditProductCategory; 
+export default EditProductCategory;
