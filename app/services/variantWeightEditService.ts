@@ -143,7 +143,7 @@ export async function handleVariantWeightEdit(request: Request, formData: FormDa
       
       if (field === 'productId' && responseData.data.product) {
         const product = responseData.data.product;
-        const missingWeightInfo = !product.variants?.edges?.[0]?.node?.weight;
+        const missingWeightInfo = !product.variants?.edges?.[0]?.node?.weight && !product.variants?.edges?.[0]?.node?.inventoryItem?.measurement?.weight;
         
         if (missingWeightInfo && formData.get("useRestApi") === "true") {
           console.log('[VariantWeightEditService] Weight info missing, fetching via REST API');
@@ -219,7 +219,7 @@ export async function handleVariantWeightEdit(request: Request, formData: FormDa
       } else {
         // Pour les recherches de plusieurs produits
         const products = responseData.data.products.edges;
-        const missingWeightInfo = products.length > 0 && !products[0].node.variants?.edges?.[0]?.node?.weight;
+        const missingWeightInfo = products.length > 0 && !products[0].node.variants?.edges?.[0]?.node?.weight && !products[0].node.variants?.edges?.[0]?.node?.inventoryItem?.measurement?.weight;
         
         if (missingWeightInfo && formData.get("useRestApi") === "true") {
           console.log('[VariantWeightEditService] Weight info missing in bulk results, fetching via REST API');
@@ -629,11 +629,19 @@ export async function handleVariantWeightEdit(request: Request, formData: FormDa
                   node {
                     id
                     title
-                    weight
-                    weightUnit
                     inventoryItem {
-                      id
+                      measurement {
+                        weight {
+                          value
+                          unit
+                        }
+                      }
                       tracked
+                      requiresShipping
+                      unitCost {
+                        amount
+                        currencyCode
+                      }
                     }
                   }
                 }
@@ -651,7 +659,7 @@ export async function handleVariantWeightEdit(request: Request, formData: FormDa
         console.log('[VariantWeightEditService] GraphQL response:', JSON.stringify(productData, null, 2));
 
         // Si GraphQL ne retourne pas les données de poids, utiliser l'API REST
-        if (!productData.data?.product?.variants?.edges?.[0]?.node?.weight) {
+        if (!productData.data?.product?.variants?.edges?.[0]?.node?.inventoryItem?.measurement?.weight) {
           console.log('[VariantWeightEditService] Weight data not found in GraphQL response, using REST API');
           
           const shop = session.shop;
@@ -703,11 +711,34 @@ export async function handleVariantWeightEdit(request: Request, formData: FormDa
         const variants = productData.data.product.variants.edges.map((edge: any) => {
           const variant = edge.node;
           console.log('Processing variant:', variant);
+          
+          // Extract weight info from the variant - could be from GraphQL or REST
+          let weight = '0';
+          let weightUnit = 'g';
+          
+          if (variant.inventoryItem?.measurement?.weight) {
+            // GraphQL structure
+            weight = variant.inventoryItem.measurement.weight.value.toString();
+            weightUnit = variant.inventoryItem.measurement.weight.unit.toLowerCase();
+            
+            // Normalize unit
+            switch (weightUnit) {
+              case 'grams': weightUnit = 'g'; break;
+              case 'kilograms': weightUnit = 'kg'; break;
+              case 'ounces': weightUnit = 'oz'; break;
+              case 'pounds': weightUnit = 'lb'; break;
+            }
+          } else if (variant.weight !== undefined) {
+            // REST structure
+            weight = variant.weight.toString();
+            weightUnit = (variant.weightUnit || variant.weight_unit || 'g').toLowerCase();
+          }
+          
           return {
             id: variant.id,
             title: variant.title,
-            weight: variant.weight?.toString() || '0',
-            weightUnit: (variant.weightUnit || variant.weight_unit || 'g').toLowerCase()
+            weight: weight,
+            weightUnit: weightUnit
           };
         });
 

@@ -446,6 +446,12 @@ export async function action({ request }: ActionFunctionArgs) {
                   node {
                     id
                     inventoryItem {
+                      measurement {
+                        weight {
+                          value
+                          unit
+                        }
+                      }
                       unitCost {
                         amount
                         currencyCode

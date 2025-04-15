@@ -168,6 +168,18 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
           label: 'Cost Per Item',
           sectionId: 'costPerItem'
         },
+      ] 
+    },
+    {
+      id: 'tools',
+      title: 'Tools',
+      items: [
+        {
+          id: 'test',
+          icon: EditIcon,
+          label: 'View Product Weights',
+          sectionId: 'test'
+        }
       ]
     }
   ];

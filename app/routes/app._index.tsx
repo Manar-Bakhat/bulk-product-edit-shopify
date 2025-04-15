@@ -32,12 +32,13 @@ import {
   Frame,
   ButtonGroup,
   Layout,
-  Box
+  Box,
+  LegacyCard
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { useState, useEffect } from "react";
 import { json } from "@remix-run/node";
-import { useSubmit, useActionData, useLoaderData, useNavigate } from "@remix-run/react";
+import { useSubmit, useActionData, useLoaderData, useNavigate, Link } from "@remix-run/react";
 import { FilterIcon, EditIcon, ResetIcon } from '@shopify/polaris-icons';
 import { Sidebar } from "../components/Sidebar";
 
@@ -383,8 +384,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Index() {
   const { shop } = useLoaderData<LoaderData>();
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
-  const [activeSection, setActiveSection] = useState("");
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [selectedSection, setSelectedSection] = useState('home');
   const navigate = useNavigate();
 
   const handleSidebarChange = (expanded: boolean) => {
@@ -392,27 +393,38 @@ export default function Index() {
   };
 
   const handleSectionChange = (section: string) => {
-    setActiveSection(section);
-    if (section === "title" || section === "price") {
+    if (section === 'home') {
+      setSelectedSection(section);
+    } else if (section === 'test') {
+      // Redirection vers la page Test
+      navigate('/app/test');
+    } else {
+      // Redirection vers Bulk Edit
       navigate(`/app/bulkEdit?section=${section}`);
     }
   };
 
+  // Render each section content based on selected section
   const renderHomeContent = () => (
-    <BlockStack gap="400">
           <Card>
-            <BlockStack gap="400">
-          <Box padding="400">
-            <BlockStack gap="400">
-              <Text variant="headingMd" as="h2">Welcome to {shop?.name || 'Your Store'}</Text>
-              <Text variant="bodyMd" as="p" tone="subdued">
-                Select an option from the sidebar to start editing your products.
-                      </Text>
-                        </BlockStack>
-          </Box>
+      <BlockStack gap="500">
+        <Text variant="heading2xl" as="h1">Bulk Product Editor</Text>
+        <Text>Welcome to the Bulk Product Editor app. This app allows you to edit multiple product fields in bulk.</Text>
+        <Text>Select an option from the sidebar to get started.</Text>
+        
+        {/* Lien vers la page Test pour voir tous les poids de produits */}
+        <BlockStack gap="300">
+          <Text variant="headingMd" as="h2">Additional Tools</Text>
+          <InlineStack>
+            <Link to="/app/test" style={{ textDecoration: 'none' }}>
+              <Button variant="primary" tone="success">
+                View All Product Weights
+              </Button>
+            </Link>
+          </InlineStack>
                 </BlockStack>
-              </Card>
       </BlockStack>
+    </Card>
   );
 
   return (
@@ -420,7 +432,7 @@ export default function Index() {
       <Sidebar
         onExpandedChange={handleSidebarChange}
         onSectionChange={handleSectionChange}
-        activeSection={activeSection}
+        activeSection={selectedSection}
       />
       <div
         style={{

@@ -49,6 +49,28 @@ interface Product {
       currencyCode: string;
     };
   };
+  variants?: {
+    edges: Array<{
+      node: {
+        id?: string;
+        title?: string;
+        inventoryItem?: {
+          measurement?: {
+            weight?: {
+              value: string;
+              unit: string;
+            };
+          };
+          tracked?: boolean;
+          requiresShipping?: boolean;
+          unitCost?: {
+            amount: string;
+            currencyCode: string;
+          };
+        };
+      };
+    }>;
+  };
 }
 
 interface ActionData {
@@ -116,7 +138,8 @@ function EditVariantWeight() {
           vendor: node.vendor,
           status: node.status,
           featuredImage: node.featuredImage,
-          priceRangeV2: node.priceRangeV2
+          priceRangeV2: node.priceRangeV2,
+          variants: node.variants
         }));
         setProducts(filteredProducts);
         setHasSearched(true);
@@ -223,7 +246,28 @@ function EditVariantWeight() {
       </Text>
     </div>,
     <div>
-      <Text variant="bodySm" as="p">-- g</Text>
+      <Text variant="bodySm" as="p">
+        {product.variants ? 
+          product.variants.edges.map(edge => {
+            const variant = edge.node;
+            if (variant.inventoryItem?.measurement?.weight) {
+              const value = variant.inventoryItem.measurement.weight.value;
+              let unit = variant.inventoryItem.measurement.weight.unit.toLowerCase();
+              
+              // Normalize unit for display
+              switch (unit) {
+                case 'grams': unit = 'g'; break;
+                case 'kilograms': unit = 'kg'; break;
+                case 'ounces': unit = 'oz'; break;
+                case 'pounds': unit = 'lb'; break;
+              }
+              
+              return `${value} ${unit}`;
+            }
+            return null;
+          }).filter(Boolean).join(', ') || '-- g'
+        : '-- g'}
+      </Text>
     </div>
   ]);
 
@@ -343,7 +387,7 @@ function EditVariantWeight() {
     formData.append("actionType", "bulkEdit");
     formData.append("section", "variantWeight");
     formData.append("productIds", JSON.stringify(products.map(p => p.id)));
-    formData.append("useRestApi", "true"); // Force l'utilisation de l'API REST pour éviter les erreurs GraphQL
+    formData.append("useRestApi", "true"); // Always force REST API to avoid GraphQL errors
     
     if (editMode === 'weight') {
       formData.append("weightValue", weightValue);
