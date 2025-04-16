@@ -309,11 +309,11 @@ const EditProductCategory = () => {
           productType: node.productType,
           vendor: node.vendor,
           status: node.status,
-          tags: node.tags || [],
+            tags: node.tags || [],
           featuredImage: node.featuredImage,
           priceRangeV2: node.priceRangeV2,
           collections: node.collections || { edges: [] },
-          productCategory: node.productCategory
+            productCategory: node.productCategory
         }));
         setProducts(filteredProducts);
         setHasSearched(true);
@@ -653,8 +653,119 @@ const EditProductCategory = () => {
           </BlockStack>
         </BlockStack>
       </Card>
+
+      {/* Step 2: Category Selection */}
+      <BlockStack gap="200">
+        <InlineStack align="space-between" blockAlign="center">
+          <Badge tone="success">Step 2 of 2</Badge>
+          <ProgressBar progress={100} tone="success" />
+        </InlineStack>
+      </BlockStack>
+
+      <Card>
+        <BlockStack gap="400">
+          <InlineStack align="space-between" blockAlign="center">
+            <InlineStack gap="300" blockAlign="center">
+              <Icon source={EditIcon} tone="success" />
+              <Text variant="headingSm" as="h2">Assign Product Taxonomy Category</Text>
+            </InlineStack>
+            <InlineStack gap="200">
+            <Button
+              onClick={() => setIsTreeView(!isTreeView)}
+                variant="tertiary"
+                size="slim"
+            >
+                {isTreeView ? "Switch to Search" : "Switch to Tree View"}
+            </Button>
+            </InlineStack>
+          </InlineStack>
+          <Divider />
+
+          <BlockStack gap="400">
+            <div style={{ maxWidth: '650px' }}>
+              {isLoadingCategories ? (
+                <InlineStack align="center" blockAlign="center" gap="200">
+                  <Spinner size="small" />
+                  <Text as="p">Loading official Shopify Product Taxonomy categories...</Text>
+                </InlineStack>
+              ) : isTreeView ? (
+                <BlockStack gap="200">
+                  <Text as="p" variant="headingMd">
+                    Select a category from the tree
+                  </Text>
+                  <InlineStack>
+                    <Text as="p" variant="bodySm" tone="subdued">
+                      Browse through Shopify's 26 main categories (like Apparel & Accessories, Electronics, etc.) and their 
+                      subcategories (over 10,500 in total). Click the ▼ arrows to expand each level of the tree.
+                    </Text>
+                  </InlineStack>
+                  <div style={{ marginTop: '12px' }}>
+                    <CategoryTreeView 
+                      categories={hierarchyTree}
+                      selectedCategoryId={selectedCategory}
+                      onSelectCategory={handleTreeCategorySelect}
+                    />
+                  </div>
+                </BlockStack>
+              ) : (
+                <BlockStack gap="200">
+                  <Text as="p" variant="headingMd">
+                    Search for a product category
+                  </Text>
+                  <InlineStack>
+                  <Text as="p" variant="bodySm" tone="subdued">
+                      Search through Shopify's product taxonomy to find the most specific category for your products.
+                  </Text>
+                  </InlineStack>
+                  <div style={{ marginTop: '12px' }}>
+                  <Autocomplete
+                    options={autocompleteOptions}
+                    selected={selectedOptions}
+                      onSelect={handleCategorySelect}
+                    textField={
+                      <Autocomplete.TextField
+                        onChange={handleInputChange}
+                          label="Product taxonomy category"
+                        value={inputValue}
+                          placeholder="Search for a category..."
+                        prefix={<Icon source={SearchIcon} />}
+                autoComplete="off"
+                      />
+                    }
+                  />
+                  </div>
+                  {selectedOptions.length > 0 && (
+                    <Stack spacing="tight">
+                      {selectedTags.map((tag) => (
+                        <Tag key={tag}>{tag}</Tag>
+                      ))}
+                    </Stack>
+                  )}
+                </BlockStack>
+              )}
+            </div>
+            
+            <InlineStack gap="400" blockAlign="center">
+            <Button 
+              variant="primary" 
+              onClick={handleBulkEdit} 
+              tone="success"
+                disabled={!selectedCategory || isLoadingCategories || products.length === 0}
+            >
+              Start bulk edit now
+            </Button>
+              
+              {selectedCategory && (
+                <Text variant="bodySm" as="p">
+                  Selected category: <strong>{taxonomyOptions.find(opt => opt.value === selectedCategory)?.label || selectedCategory}</strong>
+                </Text>
+              )}
+            </InlineStack>
+          </BlockStack>
+        </BlockStack>
+      </Card>
     </BlockStack>
   );
 };
 
-export default EditProductCategory;
+export default EditProductCategory; 

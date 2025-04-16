@@ -170,18 +170,7 @@ export function Sidebar({ onExpandedChange, onSectionChange, activeSection }: Si
         },
       ] 
     },
-    {
-      id: 'tools',
-      title: 'Tools',
-      items: [
-        {
-          id: 'test',
-          icon: EditIcon,
-          label: 'View Product Weights',
-          sectionId: 'test'
-        }
-      ]
-    }
+   
   ];
 
   return (
