@@ -2566,74 +2566,463 @@ function getDetailedPetSuppliesCategories(): TaxonomyNode[] {
       children: []
     },
     {
-      id: "gid://shopify/TaxonomyCategory/ap-2-38",
+      id: "gid://shopify/TaxonomyCategory/ap-2-39",
       name: "Pet Strollers",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Strollers",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-39-1",
+          name: "Detachable Carrier Pet Strollers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Strollers > Detachable Carrier Pet Strollers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-39-2",
+          name: "Double-Decker Strollers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Strollers > Double-Decker Strollers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-39-3",
+          name: "Jogging Strollers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Strollers > Jogging Strollers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-39-4",
+          name: "Multi-Strollers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Strollers > Multi-Strollers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-39-5",
+          name: "Standard Strollers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Strollers > Standard Strollers",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
-      id: "gid://shopify/TaxonomyCategory/ap-2-39",
+      id: "gid://shopify/TaxonomyCategory/ap-2-40",
       name: "Pet Sunscreen",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Sunscreen",
       level: 2,
       children: []
     },
     {
-      id: "gid://shopify/TaxonomyCategory/ap-2-40",
+      id: "gid://shopify/TaxonomyCategory/ap-2-41",
       name: "Pet Training Aids",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Training Aids",
       level: 2,
-      children: []
-    },
-    {
-      id: "gid://shopify/TaxonomyCategory/ap-2-41",
-      name: "Pet Vitamins & Supplements",
-      fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements",
-      level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-41-1",
+          name: "Pet Training Clickers & Treat Dispensers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Training Aids > Pet Training Clickers & Treat Dispensers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-41-2",
+          name: "Pet Training Pad Holders",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Training Aids > Pet Training Pad Holders",
+          level: 3,
+          children: [
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-41-2-1",
+              name: "Grid-Top Pad Holders",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Training Aids > Pet Training Pad Holders > Grid-Top Pad Holders",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-41-2-2",
+              name: "Regular Pad Holders",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Training Aids > Pet Training Pad Holders > Regular Pad Holders",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-41-2-3",
+              name: "Wall-Mounted Pad Holders",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Training Aids > Pet Training Pad Holders > Wall-Mounted Pad Holders",
+              level: 4,
+              children: []
+            }
+          ]
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-41-3",
+          name: "Pet Training Pads",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Training Aids > Pet Training Pads",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-41-4",
+          name: "Pet Training Sprays & Solutions",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Training Aids > Pet Training Sprays & Solutions",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-42",
-      name: "Pet Waste Bag Dispensers & Holders",
-      fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Bag Dispensers & Holders",
+      name: "Pet Vitamins & Supplements",
+      fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-1",
+          name: "CBD Supplements",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > CBD Supplements",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-2",
+          name: "Calcium",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > Calcium",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-3",
+          name: "Dental Health",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > Dental Health",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-4",
+          name: "Fish Oil",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > Fish Oil",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-5",
+          name: "Immune Support",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > Immune Support",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-6",
+          name: "Joint Health",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > Joint Health",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-7",
+          name: "Multi-Vitamins",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > Multi-Vitamins",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-8",
+          name: "Probiotics",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > Probiotics",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-9",
+          name: "Skin & Coat",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > Skin & Coat",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-42-10",
+          name: "Weight Control",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Vitamins & Supplements > Weight Control",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-43",
+      name: "Pet Waste Bag Dispensers & Holders",
+      fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Bag Dispensers & Holders",
+      level: 2,
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-43-1",
+          name: "Flashlight Dispensers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Bag Dispensers & Holders > Flashlight Dispensers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-43-2",
+          name: "Standard Dispensers & Holders",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Bag Dispensers & Holders > Standard Dispensers & Holders",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-43-3",
+          name: "Storage Dispensers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Bag Dispensers & Holders > Storage Dispensers",
+          level: 3,
+          children: []
+        }
+      ]
+    },
+    {
+      id: "gid://shopify/TaxonomyCategory/ap-2-44",
       name: "Pet Waste Bags",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Bags",
       level: 2,
       children: []
     },
     {
-      id: "gid://shopify/TaxonomyCategory/ap-2-44",
+      id: "gid://shopify/TaxonomyCategory/ap-2-45",
       name: "Pet Waste Disposal Systems & Tools",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Disposal Systems & Tools",
       level: 2,
-      children: []
-    },
-    {
-      id: "gid://shopify/TaxonomyCategory/ap-2-45",
-      name: "Reptile & Amphibian Supplies",
-      fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies",
-      level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-45-1",
+          name: "Doggy Bags",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Disposal Systems & Tools > Doggy Bags",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-45-2",
+          name: "Litter Trays",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Disposal Systems & Tools > Litter Trays",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-45-3",
+          name: "Pet Waste Disposal Systems",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Disposal Systems & Tools > Pet Waste Disposal Systems",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-45-4",
+          name: "Waste Scoopers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Waste Disposal Systems & Tools > Waste Scoopers",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-46",
-      name: "Small Animal Supplies",
-      fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies",
+      name: "Reptile & Amphibian Supplies",
+      fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-46-1",
+          name: "Reptile & Amphibian Food",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies > Reptile & Amphibian Food",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-46-2",
+          name: "Reptile & Amphibian Habitat Accessories",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies > Reptile & Amphibian Habitat Accessories",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-46-3",
+          name: "Reptile & Amphibian Habitat Heating & Lighting",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies > Reptile & Amphibian Habitat Heating & Lighting",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-46-4",
+          name: "Reptile & Amphibian Habitats",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies > Reptile & Amphibian Habitats",
+          level: 3,
+          children: [
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-46-4-1",
+              name: "Aquariums",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies > Reptile & Amphibian Habitats > Aquariums",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-46-4-2",
+              name: "Paludariums",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies > Reptile & Amphibian Habitats > Paludariums",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-46-4-3",
+              name: "Terrariums",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies > Reptile & Amphibian Habitats > Terrariums",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-46-4-4",
+              name: "Vivariums",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies > Reptile & Amphibian Habitats > Vivariums",
+              level: 4,
+              children: []
+            }
+          ]
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-46-5",
+          name: "Reptile & Amphibian Substrates",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Reptile & Amphibian Supplies > Reptile & Amphibian Substrates",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-47",
+      name: "Small Animal Supplies",
+      fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies",
+      level: 2,
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-47-1",
+          name: "Small Animal Bedding",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Bedding",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-47-2",
+          name: "Small Animal Food",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Food",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-47-3",
+          name: "Small Animal Habitat Accessories",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Habitat Accessories",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-47-4",
+          name: "Small Animal Habitats & Cages",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Habitats & Cages",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-47-5",
+          name: "Small Animal Treats",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Treats",
+          level: 3,
+          children: [
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-47-5-1",
+              name: "Biscuits & Bakery",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Treats > Biscuits & Bakery",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-47-5-2",
+              name: "Chew Treats",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Treats > Chew Treats",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-47-5-3",
+              name: "Crunchy Treats",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Treats > Crunchy Treats",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-47-5-4",
+              name: "Soft Treats",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Treats > Soft Treats",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-47-5-5",
+              name: "Stick Treats",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Treats > Stick Treats",
+              level: 4,
+              children: []
+            },
+            {
+              id: "gid://shopify/TaxonomyCategory/ap-2-47-5-6",
+              name: "Training Treats",
+              fullPath: "Animals & Pet Supplies > Pet Supplies > Small Animal Supplies > Small Animal Treats > Training Treats",
+              level: 4,
+              children: []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: "gid://shopify/TaxonomyCategory/ap-2-48",
       name: "Vehicle Pet Barriers",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Vehicle Pet Barriers",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-48-1",
+          name: "Backseat Barriers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Vehicle Pet Barriers > Backseat Barriers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-48-2",
+          name: "Cargo Area Barriers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Vehicle Pet Barriers > Cargo Area Barriers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-48-3",
+          name: "Door Barriers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Vehicle Pet Barriers > Door Barriers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-48-4",
+          name: "Partitions",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Vehicle Pet Barriers > Partitions",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-48-5",
+          name: "Window Barriers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Vehicle Pet Barriers > Window Barriers",
+          level: 3,
+          children: []
+        }
+      ]
     }
   ];
 }
