@@ -2021,7 +2021,50 @@ function getDetailedPetSuppliesCategories(): TaxonomyNode[] {
       name: "Pet Containment Systems",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Containment Systems",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-18-1",
+          name: "Electronic Invisible Fences",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Containment Systems > Electronic Invisible Fences",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-18-2",
+          name: "Enclosures & Cages",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Containment Systems > Enclosures & Cages",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-18-3",
+          name: "Exercise Pens",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Containment Systems > Exercise Pens",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-18-4",
+          name: "Fences & Gates",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Containment Systems > Fences & Gates",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-18-5",
+          name: "Kennels",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Containment Systems > Kennels",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-18-6",
+          name: "Playpens",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Containment Systems > Playpens",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-19",
@@ -2035,35 +2078,208 @@ function getDetailedPetSuppliesCategories(): TaxonomyNode[] {
       name: "Pet Doors",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Doors",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-20-1",
+          name: "Door-Mounted Doors",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Doors > Door-Mounted Doors",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-20-2",
+          name: "Electronic Automatic Doors",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Doors > Electronic Automatic Doors",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-20-3",
+          name: "Sliding Glass Doors",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Doors > Sliding Glass Doors",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-20-4",
+          name: "Wall-Mounted Doors",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Doors > Wall-Mounted Doors",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-20-5",
+          name: "Window-Mounted Doors",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Doors > Window-Mounted Doors",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-21",
       name: "Pet Eye Drops & Lubricants",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Eye Drops & Lubricants",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-21-1",
+          name: "Conjunctivitis Treatments",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Eye Drops & Lubricants > Conjunctivitis Treatments",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-21-2",
+          name: "Eye Cleaners",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Eye Drops & Lubricants > Eye Cleaners",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-21-3",
+          name: "Eye Irrigation Solutions",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Eye Drops & Lubricants > Eye Irrigation Solutions",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-21-4",
+          name: "Eye Lubricants",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Eye Drops & Lubricants > Eye Lubricants",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-21-5",
+          name: "Eye Washes",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Eye Drops & Lubricants > Eye Washes",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-21-6",
+          name: "Tear Stain Removers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Eye Drops & Lubricants > Tear Stain Removers",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-22",
       name: "Pet First Aid & Emergency Kits",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet First Aid & Emergency Kits",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-22-1",
+          name: "General First Aid Kits",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet First Aid & Emergency Kits > General First Aid Kits",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-22-2",
+          name: "Trauma Kits",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet First Aid & Emergency Kits > Trauma Kits",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-22-3",
+          name: "Travel First Aid Kits",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet First Aid & Emergency Kits > Travel First Aid Kits",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-23",
       name: "Pet Flea & Tick Control",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Flea & Tick Control",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-23-1",
+          name: "Flea & Tick Collars",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Flea & Tick Control > Flea & Tick Collars",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-23-2",
+          name: "Flea & Tick Foggers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Flea & Tick Control > Flea & Tick Foggers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-23-3",
+          name: "Flea & Tick Shampoos",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Flea & Tick Control > Flea & Tick Shampoos",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-23-4",
+          name: "Flea & Tick Sprays",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Flea & Tick Control > Flea & Tick Sprays",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-23-5",
+          name: "Flea Combs",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Flea & Tick Control > Flea Combs",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-23-6",
+          name: "Oral Medication",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Flea & Tick Control > Oral Medication",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-23-7",
+          name: "Spot Treatments",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Flea & Tick Control > Spot Treatments",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-24",
       name: "Pet Food Containers",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Food Containers",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-24-1",
+          name: "Can Covers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Food Containers > Can Covers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-24-2",
+          name: "Food Storage Bins",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Food Containers > Food Storage Bins",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-24-3",
+          name: "Food Storage Containers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Food Containers > Food Storage Containers",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-25",
@@ -2077,7 +2293,64 @@ function getDetailedPetSuppliesCategories(): TaxonomyNode[] {
       name: "Pet Grooming Supplies",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Grooming Supplies",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-26-1",
+          name: "Pet Combs & Brushes",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Grooming Supplies > Pet Combs & Brushes",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-26-2",
+          name: "Pet Fragrances & Deodorizing Sprays",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Grooming Supplies > Pet Fragrances & Deodorizing Sprays",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-26-3",
+          name: "Pet Hair Clippers & Trimmers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Grooming Supplies > Pet Hair Clippers & Trimmers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-26-4",
+          name: "Pet Hair Dryers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Grooming Supplies > Pet Hair Dryers",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-26-5",
+          name: "Pet Nail Polish",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Grooming Supplies > Pet Nail Polish",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-26-6",
+          name: "Pet Nail Tools",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Grooming Supplies > Pet Nail Tools",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-26-7",
+          name: "Pet Shampoo & Conditioner",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Grooming Supplies > Pet Shampoo & Conditioner",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-26-8",
+          name: "Pet Wipes",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Grooming Supplies > Pet Wipes",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-27",
@@ -2098,7 +2371,36 @@ function getDetailedPetSuppliesCategories(): TaxonomyNode[] {
       name: "Pet ID Tags",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet ID Tags",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-29-1",
+          name: "Digital QR Code Tags",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet ID Tags > Digital QR Code Tags",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-29-2",
+          name: "Embroidered Tags",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet ID Tags > Embroidered Tags",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-29-3",
+          name: "Medical Alert Tags",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet ID Tags > Medical Alert Tags",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-29-4",
+          name: "Slide-On Collar Tags",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet ID Tags > Slide-On Collar Tags",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-30",
@@ -2133,7 +2435,57 @@ function getDetailedPetSuppliesCategories(): TaxonomyNode[] {
       name: "Pet Medicine",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Medicine",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-34-1",
+          name: "Allergy Relief",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Medicine > Allergy Relief",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-34-2",
+          name: "Antibiotics",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Medicine > Antibiotics",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-34-3",
+          name: "Antiparasitics",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Medicine > Antiparasitics",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-34-4",
+          name: "Anxiety Relief",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Medicine > Anxiety Relief",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-34-5",
+          name: "Digestive Aids",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Medicine > Digestive Aids",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-34-6",
+          name: "Ear & Eye Medicine",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Medicine > Ear & Eye Medicine",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-34-7",
+          name: "Pain Relievers",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Medicine > Pain Relievers",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-35",
@@ -2147,7 +2499,64 @@ function getDetailedPetSuppliesCategories(): TaxonomyNode[] {
       name: "Pet Oral Care Supplies",
       fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Oral Care Supplies",
       level: 2,
-      children: []
+      children: [
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-36-1",
+          name: "Dental Chews",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Oral Care Supplies > Dental Chews",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-36-2",
+          name: "Dental Gels",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Oral Care Supplies > Dental Gels",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-36-3",
+          name: "Dental Sprays",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Oral Care Supplies > Dental Sprays",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-36-5",
+          name: "Dental Water Additives",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Oral Care Supplies > Dental Water Additives",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-36-6",
+          name: "Dental Wipes",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Oral Care Supplies > Dental Wipes",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-36-7",
+          name: "Oral Rinses",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Oral Care Supplies > Oral Rinses",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-36-8",
+          name: "Toothbrushes",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Oral Care Supplies > Toothbrushes",
+          level: 3,
+          children: []
+        },
+        {
+          id: "gid://shopify/TaxonomyCategory/ap-2-36-9",
+          name: "Toothpaste",
+          fullPath: "Animals & Pet Supplies > Pet Supplies > Pet Oral Care Supplies > Toothpaste",
+          level: 3,
+          children: []
+        }
+      ]
     },
     {
       id: "gid://shopify/TaxonomyCategory/ap-2-37",
