@@ -367,10 +367,13 @@ export async function action({ request }: ActionFunctionArgs) {
                 }
               }
             }
-            variants(first: 1) {
+            variants(first: 1000) {
               edges {
                 node {
                   id
+                  sku
+                  barcode
+                  compareAtPrice
                   inventoryItem {
                     measurement {
                       weight {
@@ -475,10 +478,13 @@ export async function action({ request }: ActionFunctionArgs) {
                   }
                 }
               }
-              variants(first: 1) {
+              variants(first: 10) {
                 edges {
                   node {
                     id
+                    sku
+                    barcode
+                    compareAtPrice
                     inventoryItem {
                       measurement {
                         weight {

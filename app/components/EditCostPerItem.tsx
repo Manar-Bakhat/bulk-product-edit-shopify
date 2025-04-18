@@ -119,16 +119,23 @@ function EditCostPerItem() {
   useEffect(() => {
     if (actionData) {
       if (actionData.data?.products?.edges) {
-        const filteredProducts = actionData.data.products.edges.map(({ node }) => ({
-          id: node.id.replace('gid://shopify/Product/', ''),
-          title: node.title,
-          description: node.description,
-          productType: node.productType,
-          vendor: node.vendor,
-          status: node.status,
-          featuredImage: node.featuredImage,
-          priceRangeV2: node.priceRangeV2
-        }));
+        const filteredProducts = actionData.data.products.edges.map(({ node }) => {
+          // Get the first variant's inventory item if it exists
+          const firstVariant = node.variants?.edges?.[0]?.node;
+          const inventoryItem = firstVariant?.inventoryItem;
+
+          return {
+            id: node.id.replace('gid://shopify/Product/', ''),
+            title: node.title,
+            description: node.description,
+            productType: node.productType,
+            vendor: node.vendor,
+            status: node.status,
+            featuredImage: node.featuredImage,
+            priceRangeV2: node.priceRangeV2,
+            inventoryItem: inventoryItem || undefined
+          };
+        });
         setProducts(filteredProducts);
         setHasSearched(true);
       }
